@@ -1,13 +1,23 @@
 import { notFound } from "next/navigation";
 import NavAdmin from "@/components/NavAdmin";
 import FormProduk from "@/components/FormProduk";
-import CatatanBelumAktif from "@/components/CatatanBelumAktif";
-import { cariProdukContoh } from "@/lib/data-contoh";
+import { ubahProdukAdmin } from "@/app/admin/actions";
+import { createServerAuthClient } from "@/lib/supabase/auth";
 
-// US-09 (bonus di jalur offline): ubah produk.
-export default async function HalamanUbahProduk({ params }) {
+export default async function HalamanUbahProduk({ params, searchParams }) {
   const { id } = await params;
-  const produk = cariProdukContoh(id);
+  const query = await searchParams;
+  const pesanError = typeof query?.error === "string" ? query.error : "";
+  const supabase = await createServerAuthClient();
+  const { data: produk, error } = await supabase
+    .from("produk")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
 
   if (!produk) {
     notFound();
@@ -17,8 +27,16 @@ export default async function HalamanUbahProduk({ params }) {
     <div className="flex flex-col gap-6 py-8">
       <NavAdmin />
       <h1 className="text-2xl font-extrabold">Ubah produk</h1>
-      <CatatanBelumAktif>Simpan perubahan belum berfungsi: lihat US-09.</CatatanBelumAktif>
-      <FormProduk produk={produk} labelTombol="Simpan perubahan" />
+      <FormProduk
+        produk={produk}
+        labelTombol="Simpan perubahan"
+        action={ubahProdukAdmin.bind(null, id)}
+      />
+      {pesanError ? (
+        <p role="alert" className="text-bahaya">
+          {pesanError}
+        </p>
+      ) : null}
     </div>
   );
 }

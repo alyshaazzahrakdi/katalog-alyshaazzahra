@@ -138,3 +138,36 @@ export async function tambahProdukAdmin(formData) {
 
   redirect("/admin");
 }
+
+export async function ubahProdukAdmin(id, formData) {
+  const nama = String(formData.get("nama") ?? "").trim();
+  const harga = Number(formData.get("harga"));
+
+  if (!nama || !Number.isFinite(harga) || harga < 0) {
+    redirect(`/admin/produk/${id}/ubah?error=${encodeURIComponent("Nama dan harga produk wajib diisi dengan benar.")}`);
+  }
+
+  const supabase = await createServerAuthClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData.user) {
+    redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
+  }
+
+  const { error } = await supabase
+    .from("produk")
+    .update({
+      nama,
+      harga,
+      kategori: String(formData.get("kategori") ?? "").trim() || null,
+      foto_url: String(formData.get("foto_url") ?? "").trim() || null,
+      deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
+    })
+    .eq("id", id);
+
+  if (error) {
+    redirect(`/admin/produk/${id}/ubah?error=${encodeURIComponent("Produk gagal diubah. " + error.message)}`);
+  }
+
+  redirect("/admin");
+}
