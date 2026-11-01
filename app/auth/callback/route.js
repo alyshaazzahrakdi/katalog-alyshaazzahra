@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
+import { normalizeSupabaseUrl } from "@/lib/supabase/url";
 
 export async function GET(request) {
   const requestUrl = new URL(request.url);
@@ -9,7 +10,7 @@ export async function GET(request) {
   const redirectUrl = new URL(nextPath, requestUrl.origin);
   const response = NextResponse.redirect(redirectUrl);
   const supabase = createServerClient(
-    process.env.SUPABASE_URL,
+    normalizeSupabaseUrl(process.env.SUPABASE_URL),
     process.env.SUPABASE_PUBLISHABLE_KEY,
     {
       cookies: {
