@@ -24,7 +24,11 @@ export async function proxy(request) {
   });
 
   const { data: userData } = await supabase.auth.getUser();
-  const isPublicAuthPage = ["/admin/login", "/admin/login/lupa-password"].includes(request.nextUrl.pathname);
+  const isPublicAuthPage = [
+    "/admin/login",
+    "/admin/login/lupa-password",
+    "/admin/password/reset",
+  ].includes(request.nextUrl.pathname);
 
   if (!userData.user && !isPublicAuthPage) {
     const loginUrl = request.nextUrl.clone();

@@ -33,6 +33,7 @@ export default function RecoveryHashHandler() {
     sudahDiproses.current = true;
     fetch("/auth/recovery", {
       method: "POST",
+      credentials: "same-origin",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken }),
     })
