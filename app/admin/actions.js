@@ -108,3 +108,33 @@ export async function ubahPasswordAdmin(formData) {
 
   redirect("/admin/password?success=Password%20berhasil%20diubah.");
 }
+
+export async function tambahProdukAdmin(formData) {
+  const nama = String(formData.get("nama") ?? "").trim();
+  const harga = Number(formData.get("harga"));
+
+  if (!nama || !Number.isFinite(harga) || harga < 0) {
+    redirect(`/admin/produk/baru?error=${encodeURIComponent("Nama dan harga produk wajib diisi dengan benar.")}`);
+  }
+
+  const supabase = await createServerAuthClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData.user) {
+    redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
+  }
+
+  const { error } = await supabase.from("produk").insert({
+    nama,
+    harga,
+    kategori: String(formData.get("kategori") ?? "").trim() || null,
+    foto_url: String(formData.get("foto_url") ?? "").trim() || null,
+    deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
+  });
+
+  if (error) {
+    redirect(`/admin/produk/baru?error=${encodeURIComponent("Produk gagal disimpan. " + error.message)}`);
+  }
+
+  redirect("/admin");
+}
