@@ -6,7 +6,9 @@ import { useState } from "react";
 
 export default function TombolWhatsApp({ produk }) {
   const [jumlah, setJumlah] = useState(1);
-  const pesan = `Halo, saya ingin memesan ${produk.nama} sebanyak ${jumlah} dengan harga ${formatRupiah(produk.harga)} per item.`;
+  if (produk.status === "habis") return <p className="rounded-lg bg-red-50 px-4 py-3 font-bold text-bahaya">Produk sedang habis.</p>;
+  const harga = produk.harga_diskon || produk.harga;
+  const pesan = `Halo, saya ingin memesan ${produk.nama} sebanyak ${jumlah} dengan harga ${formatRupiah(harga)} per item.`;
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-end">

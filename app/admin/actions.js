@@ -52,9 +52,11 @@ function normalisasiUrlFoto(nilai) {
   return url;
 }
 
-async function ambilFileFoto(formData, halamanError) {
-  const file = formData.get("foto");
+function ambilLinkFoto(formData) {
+  return String(formData.get("foto_urls") ?? "").split(/\r?\n/).map((item) => normalisasiUrlFoto(item)).filter(Boolean);
+}
 
+async function validasiFileFoto(file, halamanError) {
   if (!file || typeof file === "string" || file.size === 0) {
     return null;
   }
@@ -69,6 +71,10 @@ async function ambilFileFoto(formData, halamanError) {
   }
 
   return { file, tipeFoto };
+}
+
+async function ambilFileFoto(formData, halamanError) {
+  return validasiFileFoto(formData.get("foto"), halamanError);
 }
 
 async function unggahFotoProduk(foto, halamanError) {
@@ -253,12 +259,22 @@ export async function tambahProdukAdmin(formData) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
 
-  const foto = await unggahFotoProduk(await ambilFileFoto(formData, "/admin/produk/baru"), "/admin/produk/baru");
+  const fileFoto = formData.getAll("foto").filter((file) => file && typeof file !== "string" && file.size > 0);
+  const fotoUpload = [];
+  for (const file of fileFoto) {
+    fotoUpload.push(await unggahFotoProduk(await validasiFileFoto(file, "/admin/produk/baru"), "/admin/produk/baru"));
+  }
+  const daftarFoto = [...fotoUpload.map((foto) => foto.url), ...ambilLinkFoto(formData)];
+  const foto = fotoUpload[0];
   const { error } = await supabase.from("produk").insert({
     nama,
     harga,
     kategori: String(formData.get("kategori") ?? "").trim() || null,
-    foto_url: foto?.url || normalisasiUrlFoto(formData.get("foto_url")),
+    foto_url: foto?.url || normalisasiUrlFoto(formData.get("foto_url")) || daftarFoto[0] || null,
+    foto_urls: daftarFoto,
+    status: ["tersedia", "habis"].includes(formData.get("status")) ? formData.get("status") : "tersedia",
+    harga_diskon: Number(formData.get("harga_diskon")) > 0 ? Number(formData.get("harga_diskon")) : null,
+    badge: String(formData.get("badge") ?? "").trim() || null,
     deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
   });
 
@@ -294,6 +310,10 @@ export async function ubahProdukAdmin(id, formData) {
       harga,
       kategori: String(formData.get("kategori") ?? "").trim() || null,
       foto_url: fotoBaru?.url || normalisasiUrlFoto(formData.get("foto_url")),
+      foto_urls: [...(fotoBaru ? [fotoBaru.url] : []), ...ambilLinkFoto(formData)],
+      status: ["tersedia", "habis"].includes(formData.get("status")) ? formData.get("status") : "tersedia",
+      harga_diskon: Number(formData.get("harga_diskon")) > 0 ? Number(formData.get("harga_diskon")) : null,
+      badge: String(formData.get("badge") ?? "").trim() || null,
       deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
     })
     .eq("id", id);

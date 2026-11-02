@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { toko } from "@/lib/toko";
 import RecoveryHashHandler from "@/app/auth/RecoveryHashHandler";
+import { KeranjangProvider } from "@/components/Keranjang";
 
 export const metadata = {
   title: toko.nama,
@@ -26,10 +27,12 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="flex min-h-screen flex-col font-sans antialiased">
-        <RecoveryHashHandler />
-        <Header />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
-        <Footer />
+        <KeranjangProvider>
+          <RecoveryHashHandler />
+          <Header />
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
+          <Footer />
+        </KeranjangProvider>
       </body>
     </html>
   );
