@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
+import { normalizeSupabaseUrl } from "@/lib/supabase/url";
 
 export async function proxy(request) {
   let response = NextResponse.next({ request });
@@ -10,7 +11,7 @@ export async function proxy(request) {
     throw new Error("Konfigurasi Supabase Auth belum lengkap. Periksa SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY.");
   }
 
-  const supabase = createServerClient(supabaseUrl, supabasePublishableKey, {
+  const supabase = createServerClient(normalizeSupabaseUrl(supabaseUrl), supabasePublishableKey, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
