@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { formatRupiah } from "@/lib/format";
 import { toko } from "@/lib/toko";
 
@@ -9,6 +9,7 @@ const KeranjangContext = createContext(null);
 export function KeranjangProvider({ children }) {
   const [items, setItems] = useState([]);
   const [buka, setBuka] = useState(false);
+  const sudahDimuat = useRef(false);
 
   useEffect(() => {
     try {
@@ -16,9 +17,11 @@ export function KeranjangProvider({ children }) {
     } catch {
       setItems([]);
     }
+    sudahDimuat.current = true;
   }, []);
 
   useEffect(() => {
+    if (!sudahDimuat.current) return;
     localStorage.setItem("keranjang-produk", JSON.stringify(items));
   }, [items]);
 
@@ -32,10 +35,19 @@ export function KeranjangProvider({ children }) {
   }
 
   function ubahJumlah(id, jumlah) {
-    setItems((sebelumnya) => sebelumnya.map((item) => item.id === id ? { ...item, jumlah: Math.max(1, jumlah) } : item));
+    if (!Number.isFinite(jumlah) || jumlah < 1) {
+      hapusItem(id);
+      return;
+    }
+    setItems((sebelumnya) => sebelumnya.map((item) => item.id === id ? { ...item, jumlah } : item));
+  }
+
+  function hapusItem(id) {
+    setItems((sebelumnya) => sebelumnya.filter((item) => item.id !== id));
   }
 
   const totalItem = items.reduce((total, item) => total + item.jumlah, 0);
+  const totalHarga = items.reduce((total, item) => total + item.harga * item.jumlah, 0);
   const pesan = `Halo, saya ingin memesan:\n${items.map((item) => `- ${item.nama} x${item.jumlah} (${formatRupiah(item.harga * item.jumlah)})`).join("\n")}`;
 
   return (
@@ -51,12 +63,27 @@ export function KeranjangProvider({ children }) {
             <div className="my-3 flex max-h-52 flex-col gap-3 overflow-y-auto">
               {items.length ? items.map((item) => (
                 <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
-                  <span className="font-semibold">{item.nama}</span>
-                  <input aria-label={`Jumlah ${item.nama}`} type="number" min="1" value={item.jumlah} onChange={(event) => ubahJumlah(item.id, Number(event.target.value))} className="w-16 rounded border border-garis px-2 py-1" />
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{item.nama}</p>
+                    <p className="text-xs text-teks-lembut">{formatRupiah(item.harga * item.jumlah)}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button type="button" aria-label={`Kurangi jumlah ${item.nama}`} onClick={() => ubahJumlah(item.id, item.jumlah - 1)} className="h-7 w-7 rounded border border-garis font-bold">−</button>
+                    <span className="w-6 text-center">{item.jumlah}</span>
+                    <button type="button" aria-label={`Tambah jumlah ${item.nama}`} onClick={() => ubahJumlah(item.id, item.jumlah + 1)} className="h-7 w-7 rounded border border-garis font-bold">+</button>
+                    <button type="button" aria-label={`Hapus ${item.nama} dari keranjang`} onClick={() => hapusItem(item.id)} className="ml-1 px-1 text-bahaya hover:underline">Hapus</button>
+                  </div>
                 </div>
               )) : <p className="text-sm text-teks-lembut">Keranjang masih kosong.</p>}
             </div>
-            {items.length ? <a href={`https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesan)}`} target="_blank" rel="noreferrer" className="block rounded-lg bg-utama px-4 py-3 text-center text-sm font-bold text-white">Pesan semua via WhatsApp</a> : null}
+            {items.length ? (
+              <>
+                <p className="mb-3 border-t border-garis pt-3 text-right text-sm font-extrabold">
+                  Total: {formatRupiah(totalHarga)}
+                </p>
+                <a href={`https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesan)}`} target="_blank" rel="noreferrer" className="block rounded-lg bg-utama px-4 py-3 text-center text-sm font-bold text-white">Pesan semua via WhatsApp</a>
+              </>
+            ) : null}
           </div>
         ) : null}
         <button onClick={() => setBuka(!buka)} className="ml-auto block rounded-full bg-utama px-5 py-3 font-bold text-white shadow-lg">
