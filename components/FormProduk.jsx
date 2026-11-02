@@ -17,11 +17,14 @@ export default function FormProduk({ produk = {}, labelTombol, action }) {
       />
       <Input label="Kategori" name="kategori" defaultValue={produk.kategori} />
       <Input
-        label="Link foto"
+        label="Link foto (opsional)"
         name="foto_url"
-        placeholder="https://... atau /produk/nama-file.svg"
+        placeholder="https://drive.google.com/file/d/.../view"
         defaultValue={produk.foto_url}
       />
+      <p className="-mt-2 text-xs font-normal text-teks-lembut">
+        Alternatif hemat storage: tempel link Google Drive dengan akses “Siapa saja yang memiliki link”.
+      </p>
       <Input
         label={produk.foto_url ? "Ganti foto produk (opsional)" : "Foto produk (opsional)"}
         name="foto"
@@ -29,7 +32,9 @@ export default function FormProduk({ produk = {}, labelTombol, action }) {
         accept="image/jpeg,image/png,image/webp,image/gif"
       />
       {produk.foto_url ? <input type="hidden" name="foto_url_lama" value={produk.foto_url} /> : null}
-      <p className="-mt-2 text-xs font-normal text-teks-lembut">Format JPG, PNG, WEBP, atau GIF. Maksimal 5 MB.</p>
+      <p className="-mt-2 text-xs font-normal text-teks-lembut">
+        Atau upload ke Storage: JPG, PNG, WEBP, atau GIF, maksimal 5 MB. Jika keduanya diisi, file upload dipakai.
+      </p>
       <Input label="Deskripsi" name="deskripsi" textarea defaultValue={produk.deskripsi} />
       <div className="flex gap-3">
         <Tombol type="submit">{labelTombol}</Tombol>

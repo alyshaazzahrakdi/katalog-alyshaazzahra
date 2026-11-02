@@ -9,6 +9,34 @@ const BUCKET_FOTO_PRODUK = "produk";
 const UKURAN_MAKSIMAL_FOTO = 5 * 1024 * 1024;
 const TIPE_FOTO_DIIJINKAN = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
+function normalisasiUrlFoto(nilai) {
+  const url = String(nilai ?? "").trim();
+
+  if (!url) {
+    return null;
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.hostname === "drive.google.com") {
+      const fileId = parsedUrl.pathname.match(/^\/file\/d\/([^/]+)/)?.[1] || parsedUrl.searchParams.get("id");
+      if (fileId) {
+        return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(fileId)}`;
+      }
+    }
+
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      return null;
+    }
+  } catch {
+    if (!url.startsWith("/")) {
+      return null;
+    }
+  }
+
+  return url;
+}
+
 function ambilFileFoto(formData, halamanError) {
   const file = formData.get("foto");
 
@@ -192,7 +220,7 @@ export async function tambahProdukAdmin(formData) {
     nama,
     harga,
     kategori: String(formData.get("kategori") ?? "").trim() || null,
-    foto_url: foto?.url || String(formData.get("foto_url") ?? "").trim() || null,
+    foto_url: foto?.url || normalisasiUrlFoto(formData.get("foto_url")),
     deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
   });
 
@@ -227,7 +255,7 @@ export async function ubahProdukAdmin(id, formData) {
       nama,
       harga,
       kategori: String(formData.get("kategori") ?? "").trim() || null,
-      foto_url: fotoBaru?.url || String(formData.get("foto_url") ?? "").trim() || null,
+      foto_url: fotoBaru?.url || normalisasiUrlFoto(formData.get("foto_url")),
       deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
     })
     .eq("id", id);
