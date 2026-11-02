@@ -1,5 +1,5 @@
 import KartuProduk from "@/components/KartuProduk";
-import { toko } from "@/lib/toko";
+import { ambilPengaturanToko } from "@/lib/toko-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import TerakhirDilihat from "@/components/TerakhirDilihat";
 
@@ -7,11 +7,17 @@ export const dynamic = "force-dynamic";
 
 export default async function HalamanKatalog({ searchParams }) {
   const params = await searchParams;
+  const toko = await ambilPengaturanToko();
   const cari = typeof params?.cari === "string" ? params.cari.trim() : "";
   const kategori = typeof params?.kategori === "string" ? params.kategori.trim() : "";
   const urutkan = ["terbaru", "termurah", "termahal"].includes(params?.urutkan) ? params.urutkan : "terbaru";
+  const ukuranHalaman = 12;
+  const halamanDiminta = Math.max(1, Number.parseInt(params?.halaman, 10) || 1);
   let daftarProduk = [];
   let daftarKategori = [];
+  let totalProduk = 0;
+  let jumlahHalaman = 1;
+  let halaman = 1;
   let pesanError = "";
   let banner = null;
 
@@ -22,8 +28,19 @@ export default async function HalamanKatalog({ searchParams }) {
     const query = supabase.from("produk").select("*").eq("aktif", true);
     if (cari) query.ilike("nama", `%${cari}%`);
     if (kategori) query.eq("kategori", kategori);
-    const kolomUrutan = urutkan === "termurah" || urutkan === "termahal" ? "harga" : "created_at";
-    const { data, error } = await query.order(kolomUrutan, { ascending: urutkan !== "termahal" });
+    const countQuery = supabase.from("produk").select("id", { count: "exact", head: true }).eq("aktif", true);
+    if (cari) countQuery.ilike("nama", `%${cari}%`);
+    if (kategori) countQuery.eq("kategori", kategori);
+    const { count, error: countError } = await countQuery;
+    if (countError) throw countError;
+    totalProduk = count ?? 0;
+    jumlahHalaman = Math.max(1, Math.ceil(totalProduk / ukuranHalaman));
+    halaman = Math.min(halamanDiminta, jumlahHalaman);
+    const awal = (halaman - 1) * ukuranHalaman;
+    const { data, error } = await query
+      .order(urutkan === "termurah" || urutkan === "termahal" ? "harga" : "urutan", { ascending: urutkan !== "termahal" })
+      .order("created_at", { ascending: false })
+      .range(awal, awal + ukuranHalaman - 1);
 
     if (error) {
       throw error;
@@ -32,7 +49,7 @@ export default async function HalamanKatalog({ searchParams }) {
     daftarProduk = data ?? [];
     daftarKategori = [...new Set(daftarProduk.map((produk) => produk.kategori).filter(Boolean))].sort();
   } catch (error) {
-    pesanError = `Produk belum dapat dimuat. ${error.message}`;
+    pesanError = "Produk belum dapat dimuat. Silakan coba lagi beberapa saat.";
   }
 
   return (
@@ -76,7 +93,7 @@ export default async function HalamanKatalog({ searchParams }) {
             <button type="submit" className="rounded-lg bg-utama px-4 py-2.5 font-semibold text-white">Terapkan</button>
           </form>
           {daftarProduk.length > 0 ? (
-            <span className="hidden text-sm text-teks-lembut sm:block">{daftarProduk.length} produk tersedia</span>
+            <span className="hidden text-sm text-teks-lembut sm:block">{totalProduk} produk tersedia</span>
           ) : null}
         </div>
         {pesanError ? (
@@ -94,6 +111,21 @@ export default async function HalamanKatalog({ searchParams }) {
             ))}
           </div>
         )}
+        {jumlahHalaman > 1 ? (
+          <nav aria-label="Navigasi halaman katalog" className="flex flex-wrap items-center justify-center gap-3 text-sm">
+            {halaman > 1 ? (
+              <a href={`/?cari=${encodeURIComponent(cari)}&kategori=${encodeURIComponent(kategori)}&urutkan=${urutkan}&halaman=${halaman - 1}`} className="rounded-lg border border-garis px-4 py-2 font-semibold hover:border-utama hover:text-utama">
+                Sebelumnya
+              </a>
+            ) : null}
+            <span className="text-teks-lembut">Halaman {halaman} dari {jumlahHalaman}</span>
+            {halaman < jumlahHalaman ? (
+              <a href={`/?cari=${encodeURIComponent(cari)}&kategori=${encodeURIComponent(kategori)}&urutkan=${urutkan}&halaman=${halaman + 1}`} className="rounded-lg border border-garis px-4 py-2 font-semibold hover:border-utama hover:text-utama">
+                Berikutnya
+              </a>
+            ) : null}
+          </nav>
+        ) : null}
         <TerakhirDilihat />
       </section>
     </>

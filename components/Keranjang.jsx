@@ -2,11 +2,10 @@
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { formatRupiah } from "@/lib/format";
-import { toko } from "@/lib/toko";
 
 const KeranjangContext = createContext(null);
 
-export function KeranjangProvider({ children }) {
+export function KeranjangProvider({ children, toko }) {
   const [items, setItems] = useState([]);
   const [buka, setBuka] = useState(false);
   const sudahDimuat = useRef(false);

@@ -11,6 +11,9 @@ import TombolFavorit from "@/components/TombolFavorit";
 import TombolBandingkan from "@/components/TombolBandingkan";
 import CatatProdukDilihat from "@/components/CatatProdukDilihat";
 import { kirimUlasan } from "@/app/admin/actions";
+import { ambilPengaturanToko } from "@/lib/toko-server";
+import { slugKategori } from "@/lib/kategori";
+import AsistenProduk from "@/components/AsistenProduk";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +31,7 @@ export async function generateMetadata({ params }) {
 
 export default async function HalamanDetailProduk({ params }) {
   const { id } = await params;
+  const toko = await ambilPengaturanToko();
   const supabase = createServerSupabaseClient();
   const { data: produk, error } = await supabase
     .from("produk")
@@ -51,6 +55,9 @@ export default async function HalamanDetailProduk({ params }) {
     .order("created_at", { ascending: false })
     .limit(4);
   if (terkaitError) throw terkaitError;
+  const { data: varianProduk, error: varianError } = await supabase.from("varian_produk").select("id,nama,harga").eq("produk_id", id).order("id");
+  if (varianError) throw varianError;
+  produk.varian_produk = varianProduk ?? [];
   const { data: ulasan } = await supabase.from("ulasan").select("id,nama,rating,komentar,created_at").eq("produk_id", id).eq("tampil", true).order("created_at", { ascending: false });
   const rataRata = ulasan?.length ? (ulasan.reduce((sum, item) => sum + item.rating, 0) / ulasan.length).toFixed(1) : null;
 
@@ -64,9 +71,9 @@ export default async function HalamanDetailProduk({ params }) {
         <div className="relative">
           <GaleriProduk produk={produk} />
           {produk.kategori ? (
-            <span className="absolute left-5 top-5 rounded-full bg-latar/90 px-4 py-2 text-xs font-bold text-utama shadow-sm">
+            <Link href={`/kategori/${slugKategori(produk.kategori)}`} className="absolute left-5 top-5 rounded-full bg-latar/90 px-4 py-2 text-xs font-bold text-utama shadow-sm">
               {produk.kategori}
-            </span>
+            </Link>
           ) : null}
         </div>
         <section className="mt-10 rounded-2xl border border-garis bg-latar p-6">
@@ -90,12 +97,13 @@ export default async function HalamanDetailProduk({ params }) {
             {produk.deskripsi || "Produk pilihan dengan kualitas terbaik dari toko kami."}
           </p>
           <div className="mt-8">
-            <TombolWhatsApp produk={produk} />
+            <TombolWhatsApp produk={produk} toko={toko} />
           </div>
           <div className="mt-3 flex flex-wrap gap-2"><TombolBagikan nama={produk.nama} /><TombolBandingkan produk={produk} /></div>
           <p className="mt-4 text-xs leading-5 text-teks-lembut">
             Anda akan diarahkan ke WhatsApp untuk melanjutkan pemesanan.
           </p>
+          <AsistenProduk produkId={produk.id} />
         </div>
       </div>
       {produkTerkait?.length ? (

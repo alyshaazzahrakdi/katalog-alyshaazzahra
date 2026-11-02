@@ -1,7 +1,7 @@
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { toko } from "@/lib/toko";
+import { ambilPengaturanToko } from "@/lib/toko-server";
 import RecoveryHashHandler from "@/app/auth/RecoveryHashHandler";
 import { KeranjangProvider } from "@/components/Keranjang";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -9,17 +9,17 @@ import { FavoritProvider } from "@/components/FavoritProvider";
 import { TerakhirDilihatProvider } from "@/components/TerakhirDilihatProvider";
 import { BandingkanProvider } from "@/components/BandingkanProvider";
 
-export const metadata = {
-  title: toko.nama,
-  description: toko.tagline,
-  manifest: "/manifest.webmanifest",
-};
+export async function generateMetadata() {
+  const toko = await ambilPengaturanToko();
+  return { title: toko.nama, description: toko.tagline, manifest: "/manifest.webmanifest" };
+}
 
 export const viewport = {
   themeColor: "#1f6b4f",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const toko = await ambilPengaturanToko();
   return (
     <html lang="id" suppressHydrationWarning>
       <head>
@@ -35,11 +35,11 @@ export default function RootLayout({ children }) {
           <FavoritProvider>
           <TerakhirDilihatProvider>
           <BandingkanProvider>
-          <KeranjangProvider>
+          <KeranjangProvider toko={toko}>
           <RecoveryHashHandler />
-          <Header />
+          <Header toko={toko} />
           <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
-          <Footer />
+          <Footer toko={toko} />
           </KeranjangProvider>
           </BandingkanProvider>
           </TerakhirDilihatProvider>

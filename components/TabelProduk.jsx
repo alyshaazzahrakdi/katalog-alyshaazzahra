@@ -2,7 +2,7 @@
 
 import { formatRupiah } from "@/lib/format";
 import Tombol from "@/components/Tombol";
-import { hapusProdukAdmin, hapusProdukTerpilihAdmin, ubahStatusProdukAdmin } from "@/app/admin/actions";
+import { hapusProdukAdmin, hapusProdukTerpilihAdmin, ubahStatusProdukAdmin, ubahUrutanProdukAdmin } from "@/app/admin/actions";
 import { useState } from "react";
 import { urlFotoTampil } from "@/lib/foto";
 
@@ -16,9 +16,19 @@ export default function TabelProduk({ daftarProduk }) {
     ));
   }
 
+  function konfirmasiHapus(event, jumlah = 1) {
+    const pesan = jumlah > 1
+      ? `Hapus ${jumlah} produk yang dipilih? Data yang dihapus tidak dapat dikembalikan.`
+      : "Hapus produk ini? Data yang dihapus tidak dapat dikembalikan.";
+
+    if (!window.confirm(pesan)) {
+      event.preventDefault();
+    }
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      <form action={hapusProdukTerpilihAdmin} className="flex justify-end px-5 pt-4">
+      <form action={hapusProdukTerpilihAdmin} onSubmit={(event) => konfirmasiHapus(event, terpilih.length)} className="flex justify-end px-5 pt-4">
         {terpilih.map((id) => <input key={id} type="hidden" name="produk_id" value={id} />)}
         <Tombol type="submit" varian="bahaya" disabled={terpilih.length === 0}>
           Hapus yang dipilih ({terpilih.length})
@@ -75,7 +85,15 @@ export default function TabelProduk({ daftarProduk }) {
                     <input type="hidden" name="aktif" value={String(!produk.aktif)} />
                     <Tombol type="submit" varian="garis">{produk.aktif === false ? "Aktifkan" : "Nonaktifkan"}</Tombol>
                   </form>
-                  <form action={hapusProdukAdmin.bind(null, produk.id)}>
+                  <form action={ubahUrutanProdukAdmin.bind(null, produk.id)}>
+                    <input type="hidden" name="arah" value="naik" />
+                    <Tombol type="submit" varian="garis" aria-label={`Naikkan urutan ${produk.nama}`}>↑</Tombol>
+                  </form>
+                  <form action={ubahUrutanProdukAdmin.bind(null, produk.id)}>
+                    <input type="hidden" name="arah" value="turun" />
+                    <Tombol type="submit" varian="garis" aria-label={`Turunkan urutan ${produk.nama}`}>↓</Tombol>
+                  </form>
+                  <form action={hapusProdukAdmin.bind(null, produk.id)} onSubmit={konfirmasiHapus}>
                     <input type="hidden" name="foto_url" value={produk.foto_url ?? ""} />
                     <Tombol type="submit" varian="bahaya">
                       Hapus

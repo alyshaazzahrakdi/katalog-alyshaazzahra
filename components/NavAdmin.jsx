@@ -11,6 +11,9 @@ export default function NavAdmin() {
         Ganti password
       </Link>
       <Link href="/admin/ulasan" className="rounded-xl px-4 py-2.5 font-semibold text-teks-lembut hover:bg-permukaan hover:text-utama">Moderasi ulasan</Link>
+      <Link href="/admin/akun" className="rounded-xl px-4 py-2.5 font-semibold text-teks-lembut hover:bg-permukaan hover:text-utama">Akun admin</Link>
+      <Link href="/admin/log-aktivitas" className="rounded-xl px-4 py-2.5 font-semibold text-teks-lembut hover:bg-permukaan hover:text-utama">Log aktivitas</Link>
+      <Link href="/admin/impor" className="rounded-xl px-4 py-2.5 font-semibold text-teks-lembut hover:bg-permukaan hover:text-utama">Impor CSV</Link>
       <form action={logoutAdmin} className="ml-auto">
         <button type="submit" className="rounded-xl px-4 py-2.5 font-semibold text-teks-lembut hover:bg-red-50 hover:text-bahaya">
           Keluar

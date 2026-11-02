@@ -1,4 +1,4 @@
-export default function Input({ label, name, type = "text", textarea = false, ...props }) {
+export default function Input({ label, name, type = "text", textarea = false, error, ...props }) {
   const kelas =
     "w-full rounded-lg border border-garis bg-latar px-3 py-2.5 text-base text-teks placeholder:text-teks-lembut focus:border-utama focus:outline-none";
 
@@ -10,6 +10,7 @@ export default function Input({ label, name, type = "text", textarea = false, ..
       ) : (
         <input name={name} type={type} className={kelas} {...props} />
       )}
+      {error ? <p role="alert" className="text-sm font-normal text-bahaya">{error}</p> : null}
     </label>
   );
 }

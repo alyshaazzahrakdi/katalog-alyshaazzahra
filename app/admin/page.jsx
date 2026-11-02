@@ -2,7 +2,7 @@ import NavAdmin from "@/components/NavAdmin";
 import TabelProduk from "@/components/TabelProduk";
 import Tombol from "@/components/Tombol";
 import { createServerAuthClient } from "@/lib/supabase/auth";
-import { simpanBanner } from "@/app/admin/actions";
+import { simpanBanner, simpanPengaturanToko } from "@/app/admin/actions";
 
 export default async function HalamanAdmin({ searchParams }) {
   const params = await searchParams;
@@ -23,25 +23,46 @@ export default async function HalamanAdmin({ searchParams }) {
   const nomorHalaman = Math.min(nomorHalamanDiminta, jumlahHalaman);
   const awal = (nomorHalaman - 1) * ukuran;
   const akhir = awal + ukuran - 1;
-  const dataQuery = supabase.from("produk").select("*").order("created_at", { ascending: false }).range(awal, akhir);
+  const dataQuery = supabase.from("produk").select("*").order("urutan", { ascending: true }).order("created_at", { ascending: false }).range(awal, akhir);
   if (cari) dataQuery.ilike("nama", `%${cari}%`);
   const { data: daftarProduk, error } = await dataQuery;
 
   if (error) {
     throw error;
   }
+  const { data: semuaKategori, error: kategoriError } = await supabase
+    .from("produk")
+    .select("kategori");
+
+  if (kategoriError) {
+    throw kategoriError;
+  }
+
+  const jumlahPerKategori = Object.entries(
+    (semuaKategori ?? []).reduce((hasil, produk) => {
+      const kategori = produk.kategori?.trim() || "Tanpa kategori";
+      hasil[kategori] = (hasil[kategori] || 0) + 1;
+      return hasil;
+    }, {}),
+  ).sort(([, jumlahA], [, jumlahB]) => jumlahB - jumlahA);
   const { data: terlaris } = await supabase.from("klik_whatsapp").select("produk_id").limit(1000);
   const idsTerlaris = [...new Set((terlaris ?? []).map((item) => item.produk_id).filter(Boolean))];
   const { data: namaProduk } = idsTerlaris.length ? await supabase.from("produk").select("id,nama").in("id", idsTerlaris) : { data: [] };
   const namaById = Object.fromEntries((namaProduk ?? []).map((item) => [item.id, item.nama]));
   const hitungan = Object.values((terlaris ?? []).reduce((acc, item) => { const key = item.produk_id; acc[key] = acc[key] || { nama: namaById[key] || "Produk", jumlah: 0 }; acc[key].jumlah += 1; return acc; }, {})).sort((a, b) => b.jumlah - a.jumlah).slice(0, 5);
   const { data: banner } = await supabase.from("banner_promo").select("*").order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: pengaturanToko, error: pengaturanError } = await supabase.from("pengaturan_toko").select("*").eq("id", 1).maybeSingle();
+  if (pengaturanError) throw pengaturanError;
+  const fieldNames = ["nama", "tagline", "nomor_whatsapp", "alamat", "jam_buka"];
+  const nilaiPengaturan = Object.fromEntries(fieldNames.map((field) => [field, typeof params?.[field] === "string" ? params[field] : pengaturanToko?.[field] || ""]));
+  const errorsPengaturan = Object.fromEntries(fieldNames.filter((field) => typeof params?.[`error_${field}`] === "string").map((field) => [field, params[`error_${field}`]]));
 
   return (
     <div className="flex flex-col gap-6 py-8 sm:gap-8 sm:py-10">
       <NavAdmin />
       <section className="rounded-2xl border border-garis bg-latar p-5"><h2 className="text-xl font-extrabold">Produk terlaris</h2>{hitungan.length ? <ol className="mt-3 list-decimal pl-5">{hitungan.map((item) => <li key={item.nama}>{item.nama} — {item.jumlah} klik</li>)}</ol> : <p className="mt-2 text-teks-lembut">Belum ada data klik WhatsApp.</p>}</section>
       <section className="rounded-2xl border border-garis bg-latar p-5"><h2 className="text-xl font-extrabold">Banner promo</h2><form action={simpanBanner} className="mt-3 grid gap-3 sm:grid-cols-2"><input type="hidden" name="id" value={banner?.id || ""} /><input required name="judul" defaultValue={banner?.judul || ""} placeholder="Judul" className="rounded-lg border border-garis px-3 py-2" /><input name="teks" defaultValue={banner?.teks || ""} placeholder="Teks promo" className="rounded-lg border border-garis px-3 py-2" /><input name="gambar_url" defaultValue={banner?.gambar_url || ""} placeholder="URL gambar (opsional)" className="rounded-lg border border-garis px-3 py-2" /><input name="tautan" defaultValue={banner?.tautan || ""} placeholder="Tautan (opsional)" className="rounded-lg border border-garis px-3 py-2" /><select name="aktif" defaultValue={String(banner?.aktif ?? true)} className="rounded-lg border border-garis px-3 py-2"><option value="true">Aktif</option><option value="false">Nonaktif</option></select><button className="rounded-lg bg-utama px-4 py-2 font-semibold text-white">Simpan banner</button></form></section>
+      <section className="rounded-2xl border border-garis bg-latar p-5"><h2 className="text-xl font-extrabold">Pengaturan toko</h2><p className="mt-1 text-sm text-teks-lembut">Informasi ini dipakai di header, footer, halaman tentang, dan tombol WhatsApp.</p><form action={simpanPengaturanToko} className="mt-4 grid gap-3 sm:grid-cols-2"><label className="flex flex-col gap-1.5 text-sm font-semibold">Nama toko<input name="nama" defaultValue={nilaiPengaturan.nama} className="rounded-lg border border-garis px-3 py-2.5" />{errorsPengaturan.nama ? <span className="font-normal text-bahaya">{errorsPengaturan.nama}</span> : null}</label><label className="flex flex-col gap-1.5 text-sm font-semibold">Tagline<input name="tagline" defaultValue={nilaiPengaturan.tagline} className="rounded-lg border border-garis px-3 py-2.5" />{errorsPengaturan.tagline ? <span className="font-normal text-bahaya">{errorsPengaturan.tagline}</span> : null}</label><label className="flex flex-col gap-1.5 text-sm font-semibold">Nomor WhatsApp<input name="nomor_whatsapp" inputMode="tel" placeholder="6281234567890" defaultValue={nilaiPengaturan.nomor_whatsapp} className="rounded-lg border border-garis px-3 py-2.5" />{errorsPengaturan.nomor_whatsapp ? <span className="font-normal text-bahaya">{errorsPengaturan.nomor_whatsapp}</span> : null}</label><label className="flex flex-col gap-1.5 text-sm font-semibold">Alamat<input name="alamat" defaultValue={nilaiPengaturan.alamat} className="rounded-lg border border-garis px-3 py-2.5" />{errorsPengaturan.alamat ? <span className="font-normal text-bahaya">{errorsPengaturan.alamat}</span> : null}</label><label className="flex flex-col gap-1.5 text-sm font-semibold sm:col-span-2">Jam buka<input name="jam_buka" defaultValue={nilaiPengaturan.jam_buka} className="rounded-lg border border-garis px-3 py-2.5" />{errorsPengaturan.jam_buka ? <span className="font-normal text-bahaya">{errorsPengaturan.jam_buka}</span> : null}</label><button className="rounded-lg bg-utama px-4 py-2 font-semibold text-white sm:col-span-2 sm:justify-self-start">Simpan pengaturan toko</button></form></section>
       <section className="relative overflow-hidden rounded-[2rem] bg-utama px-6 py-8 text-white shadow-[0_18px_45px_rgba(31,107,79,0.18)] sm:px-10 sm:py-10">
         <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full border-[24px] border-white/10" />
         <div className="absolute -bottom-24 right-24 h-40 w-40 rounded-full bg-white/5" />
@@ -73,6 +94,29 @@ export default async function HalamanAdmin({ searchParams }) {
           <p className="mt-2 text-lg font-extrabold text-harga">{count ? "Aktif dan siap dilihat" : "Belum ada produk"}</p>
         </div>
       </div>
+      <section className="rounded-2xl border border-garis bg-latar p-5 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-extrabold">Produk per kategori</h2>
+            <p className="mt-1 text-sm text-teks-lembut">Ringkasan seluruh produk di katalog.</p>
+          </div>
+          <span className="rounded-full bg-permukaan px-3 py-1 text-xs font-bold text-teks-lembut">
+            {jumlahPerKategori.length} kategori
+          </span>
+        </div>
+        {jumlahPerKategori.length ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {jumlahPerKategori.map(([kategori, jumlah]) => (
+              <div key={kategori} className="flex items-center justify-between rounded-xl border border-garis bg-permukaan/60 px-4 py-3">
+                <span className="font-semibold">{kategori}</span>
+                <span className="rounded-full bg-utama px-3 py-1 text-sm font-bold text-white">{jumlah}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-5 text-sm text-teks-lembut">Belum ada kategori produk.</p>
+        )}
+      </section>
       {typeof params?.error === "string" ? (
         <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-bahaya">
           {params.error}

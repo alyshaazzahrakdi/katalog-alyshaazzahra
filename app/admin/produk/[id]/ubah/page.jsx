@@ -9,6 +9,9 @@ export default async function HalamanUbahProduk({ params, searchParams }) {
   const query = await searchParams;
   const pesanError = typeof query?.error === "string" ? query.error : "";
   const pesanSukses = typeof query?.success === "string" ? query.success : "";
+  const fieldNames = ["nama", "harga", "kategori", "foto_url", "foto_urls", "varian", "status", "harga_diskon", "badge", "deskripsi"];
+  const nilaiForm = Object.fromEntries(fieldNames.filter((field) => typeof query?.[field] === "string").map((field) => [field, query[field]]));
+  const errors = Object.fromEntries(fieldNames.filter((field) => typeof query?.[`error_${field}`] === "string").map((field) => [field, query[`error_${field}`]]));
   const supabase = await createServerAuthClient();
   const { data: produk, error } = await supabase
     .from("produk")
@@ -23,6 +26,9 @@ export default async function HalamanUbahProduk({ params, searchParams }) {
   if (!produk) {
     notFound();
   }
+  const { data: varianProduk, error: varianError } = await supabase.from("varian_produk").select("nama,harga").eq("produk_id", id).order("id");
+  if (varianError) throw varianError;
+  produk.varian_produk = varianProduk ?? [];
 
   return (
     <div className="flex flex-col gap-6 py-8">
@@ -30,6 +36,8 @@ export default async function HalamanUbahProduk({ params, searchParams }) {
       <h1 className="text-2xl font-extrabold">Ubah produk</h1>
       <FormProduk
         produk={produk}
+        nilaiForm={nilaiForm}
+        errors={errors}
         labelTombol="Simpan perubahan"
         action={ubahProdukAdmin.bind(null, id)}
       />
