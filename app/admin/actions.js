@@ -3,6 +3,69 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createServerAuthClient } from "@/lib/supabase/auth";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
+const BUCKET_FOTO_PRODUK = "produk";
+const UKURAN_MAKSIMAL_FOTO = 5 * 1024 * 1024;
+const TIPE_FOTO_DIIJINKAN = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+function ambilFileFoto(formData, halamanError) {
+  const file = formData.get("foto");
+
+  if (!file || typeof file === "string" || file.size === 0) {
+    return null;
+  }
+
+  if (!TIPE_FOTO_DIIJINKAN.includes(file.type)) {
+    redirect(`${halamanError}?error=${encodeURIComponent("Foto harus berformat JPG, PNG, WEBP, atau GIF.")}`);
+  }
+
+  if (file.size > UKURAN_MAKSIMAL_FOTO) {
+    redirect(`${halamanError}?error=${encodeURIComponent("Ukuran foto maksimal 5 MB.")}`);
+  }
+
+  return file;
+}
+
+async function unggahFotoProduk(file, halamanError) {
+  if (!file) {
+    return null;
+  }
+
+  const ekstensi = file.type.split("/")[1].replace("jpeg", "jpg");
+  const path = `${crypto.randomUUID()}.${ekstensi}`;
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.storage.from(BUCKET_FOTO_PRODUK).upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+
+  if (error) {
+    redirect(`${halamanError}?error=${encodeURIComponent("Foto gagal diunggah. Pastikan bucket Storage 'produk' sudah dibuat dan bersifat publik.")}`);
+  }
+
+  const { data } = supabase.storage.from(BUCKET_FOTO_PRODUK).getPublicUrl(path);
+  return { path, url: data.publicUrl };
+}
+
+async function hapusFotoProduk(url) {
+  if (!url) {
+    return;
+  }
+
+  const penanda = `/storage/v1/object/public/${BUCKET_FOTO_PRODUK}/`;
+  const posisi = url.indexOf(penanda);
+  if (posisi === -1) {
+    return;
+  }
+
+  const path = decodeURIComponent(url.slice(posisi + penanda.length));
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase.storage.from(BUCKET_FOTO_PRODUK).remove([path]);
+  if (error) {
+    console.error("Foto produk lama gagal dihapus:", error.message);
+  }
+}
 
 export async function loginAdmin(formData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -19,7 +82,7 @@ export async function loginAdmin(formData) {
     redirect("/admin/login?error=Email%20atau%20password%20salah.");
   }
 
-  redirect(`/admin?success=${encodeURIComponent("Produk berhasil ditambahkan.")}`);
+  redirect("/admin");
 }
 
 export async function logoutAdmin() {
@@ -124,15 +187,17 @@ export async function tambahProdukAdmin(formData) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
 
+  const foto = await unggahFotoProduk(ambilFileFoto(formData, "/admin/produk/baru"), "/admin/produk/baru");
   const { error } = await supabase.from("produk").insert({
     nama,
     harga,
     kategori: String(formData.get("kategori") ?? "").trim() || null,
-    foto_url: String(formData.get("foto_url") ?? "").trim() || null,
+    foto_url: foto?.url || String(formData.get("foto_url") ?? "").trim() || null,
     deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
   });
 
   if (error) {
+    await hapusFotoProduk(foto?.url);
     redirect(`/admin/produk/baru?error=${encodeURIComponent("Produk gagal disimpan. " + error.message)}`);
   }
 
@@ -154,21 +219,27 @@ export async function ubahProdukAdmin(id, formData) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
 
+  const fileFoto = ambilFileFoto(formData, `/admin/produk/${id}/ubah`);
+  const fotoBaru = await unggahFotoProduk(fileFoto, `/admin/produk/${id}/ubah`);
   const { error } = await supabase
     .from("produk")
     .update({
       nama,
       harga,
       kategori: String(formData.get("kategori") ?? "").trim() || null,
-      foto_url: String(formData.get("foto_url") ?? "").trim() || null,
+      foto_url: fotoBaru?.url || String(formData.get("foto_url") ?? "").trim() || null,
       deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
     })
     .eq("id", id);
 
   if (error) {
+    await hapusFotoProduk(fotoBaru?.url);
     redirect(`/admin/produk/${id}/ubah?error=${encodeURIComponent("Produk gagal diubah. " + error.message)}`);
   }
 
+  if (fotoBaru) {
+    await hapusFotoProduk(String(formData.get("foto_url_lama") ?? ""));
+  }
   redirect(`/admin?success=${encodeURIComponent("Produk berhasil diubah.")}`);
 }
 
@@ -198,7 +269,7 @@ export async function hapusProdukTerpilihAdmin(formData) {
   redirect(`/admin?success=${encodeURIComponent(`${ids.length} produk berhasil dihapus.`)}`);
 }
 
-export async function hapusProdukAdmin(id) {
+export async function hapusProdukAdmin(id, formData) {
   if (!id) {
     redirect(`/admin?error=${encodeURIComponent("Produk yang akan dihapus tidak valid.")}`);
   }
@@ -216,5 +287,6 @@ export async function hapusProdukAdmin(id) {
     redirect(`/admin?error=${encodeURIComponent("Produk gagal dihapus. " + error.message)}`);
   }
 
+  await hapusFotoProduk(String(formData?.get("foto_url") ?? ""));
   redirect(`/admin?success=${encodeURIComponent("Produk berhasil dihapus.")}`);
 }

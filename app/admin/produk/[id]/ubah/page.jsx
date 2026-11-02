@@ -8,6 +8,7 @@ export default async function HalamanUbahProduk({ params, searchParams }) {
   const { id } = await params;
   const query = await searchParams;
   const pesanError = typeof query?.error === "string" ? query.error : "";
+  const pesanSukses = typeof query?.success === "string" ? query.success : "";
   const supabase = await createServerAuthClient();
   const { data: produk, error } = await supabase
     .from("produk")
@@ -37,6 +38,7 @@ export default async function HalamanUbahProduk({ params, searchParams }) {
           {pesanError}
         </p>
       ) : null}
+      {pesanSukses ? <p className="text-utama">{pesanSukses}</p> : null}
     </div>
   );
 }

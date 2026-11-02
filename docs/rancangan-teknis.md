@@ -19,6 +19,10 @@ Supabase
 
 Browser tidak pernah berhubungan langsung dengan Supabase. Alamat proyek dan kunci Supabase hanya ada di server.
 
+Foto produk diunggah oleh Server Action ke Supabase Storage bucket `produk` yang bersifat
+publik. URL publiknya disimpan di kolom `foto_url`. Upload dibatasi ke JPG, PNG, WEBP,
+atau GIF dengan ukuran maksimal 5 MB.
+
 ## Dua jenis koneksi Supabase
 
 | Koneksi | Kunci | Dipakai untuk |

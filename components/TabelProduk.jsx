@@ -69,6 +69,7 @@ export default function TabelProduk({ daftarProduk }) {
                     Ubah
                   </Tombol>
                   <form action={hapusProdukAdmin.bind(null, produk.id)}>
+                    <input type="hidden" name="foto_url" value={produk.foto_url ?? ""} />
                     <Tombol type="submit" varian="bahaya">
                       Hapus
                     </Tombol>
