@@ -2,7 +2,7 @@
 
 import { formatRupiah } from "@/lib/format";
 import Tombol from "@/components/Tombol";
-import { hapusProdukAdmin, hapusProdukTerpilihAdmin } from "@/app/admin/actions";
+import { hapusProdukAdmin, hapusProdukTerpilihAdmin, ubahStatusProdukAdmin } from "@/app/admin/actions";
 import { useState } from "react";
 import { urlFotoTampil } from "@/lib/foto";
 
@@ -71,6 +71,10 @@ export default function TabelProduk({ daftarProduk }) {
                   <Tombol href={`/admin/produk/${produk.id}/ubah`} varian="garis">
                     Ubah
                   </Tombol>
+                  <form action={ubahStatusProdukAdmin.bind(null, produk.id)}>
+                    <input type="hidden" name="aktif" value={String(!produk.aktif)} />
+                    <Tombol type="submit" varian="garis">{produk.aktif === false ? "Aktifkan" : "Nonaktifkan"}</Tombol>
+                  </form>
                   <form action={hapusProdukAdmin.bind(null, produk.id)}>
                     <input type="hidden" name="foto_url" value={produk.foto_url ?? ""} />
                     <Tombol type="submit" varian="bahaya">

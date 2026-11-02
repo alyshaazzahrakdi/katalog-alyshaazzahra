@@ -14,6 +14,7 @@ create table if not exists public.produk (
   status text not null default 'tersedia' check (status in ('tersedia', 'habis')),
   harga_diskon integer check (harga_diskon is null or harga_diskon >= 0),
   badge text,
+  aktif boolean not null default true,
   created_at timestamptz not null default now()
 );
 

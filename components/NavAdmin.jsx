@@ -10,6 +10,7 @@ export default function NavAdmin() {
       <Link href="/admin/password" className="rounded-xl px-4 py-2.5 font-semibold text-teks-lembut hover:bg-permukaan hover:text-utama">
         Ganti password
       </Link>
+      <Link href="/admin/ulasan" className="rounded-xl px-4 py-2.5 font-semibold text-teks-lembut hover:bg-permukaan hover:text-utama">Moderasi ulasan</Link>
       <form action={logoutAdmin} className="ml-auto">
         <button type="submit" className="rounded-xl px-4 py-2.5 font-semibold text-teks-lembut hover:bg-red-50 hover:text-bahaya">
           Keluar

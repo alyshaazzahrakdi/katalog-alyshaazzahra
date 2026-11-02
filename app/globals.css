@@ -22,6 +22,18 @@
   --color-bahaya: #b42318;
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+  --color-latar: #111815;
+  --color-permukaan: #1b2721;
+  --color-garis: #34443b;
+  --color-teks: #edf5ef;
+  --color-teks-lembut: #b6c8bc;
+  --color-harga: #f3c878;
+  --color-harga-latar: #3a2f1d;
+}
+
 html {
   color: var(--color-teks);
   background: var(--color-latar);

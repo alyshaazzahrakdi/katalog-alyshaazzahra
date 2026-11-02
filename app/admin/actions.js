@@ -244,6 +244,16 @@ export async function ubahPasswordAdmin(formData) {
   redirect("/admin/password?success=Password%20berhasil%20diubah.");
 }
 
+export async function ubahStatusProdukAdmin(id, formData) {
+  const supabase = await createServerAuthClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) redirect("/admin/login?error=Sesi%20admin%20sudah%20berakhir.");
+  const aktif = formData.get("aktif") === "true";
+  const { error } = await supabase.from("produk").update({ aktif }).eq("id", id);
+  if (error) redirect(`/admin?error=${encodeURIComponent("Status produk gagal diubah. " + error.message)}`);
+  redirect(`/admin?success=${encodeURIComponent(aktif ? "Produk diaktifkan." : "Produk dinonaktifkan.")}`);
+}
+
 export async function tambahProdukAdmin(formData) {
   const nama = String(formData.get("nama") ?? "").trim();
   const harga = Number(formData.get("harga"));
@@ -362,17 +372,55 @@ export async function hapusProdukAdmin(id, formData) {
 
   const supabase = await createServerAuthClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
-
   if (userError || !userData.user) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
-
   const { error } = await supabase.from("produk").delete().eq("id", id);
-
   if (error) {
     redirect(`/admin?error=${encodeURIComponent("Produk gagal dihapus. " + error.message)}`);
   }
-
   await hapusFotoProduk(String(formData?.get("foto_url") ?? ""));
   redirect(`/admin?success=${encodeURIComponent("Produk berhasil dihapus.")}`);
+}
+
+export async function kirimUlasan(formData) {
+  const produkId = Number(formData.get("produk_id"));
+  const nama = String(formData.get("nama") ?? "").trim();
+  const komentar = String(formData.get("komentar") ?? "").trim();
+  const rating = Number(formData.get("rating"));
+  if (formData.get("website") || !Number.isInteger(produkId) || nama.length < 2 || nama.length > 80 || komentar.length < 3 || komentar.length > 1000 || !Number.isInteger(rating) || rating < 1 || rating > 5) redirect(`/produk/${produkId}?error=Ulasan%20tidak%20valid.`);
+  const supabase = createServerSupabaseClient();
+  const { count } = await supabase.from("ulasan").select("id", { count: "exact", head: true }).eq("produk_id", produkId).gte("created_at", new Date(Date.now() - 3600000).toISOString());
+  if ((count ?? 0) >= 3) redirect(`/produk/${produkId}?error=Batas%20kiriman%20ulasan%20tercapai.`);
+  await supabase.from("ulasan").insert({ produk_id: produkId, nama, komentar, rating });
+  redirect(`/produk/${produkId}?success=Ulasan%20dikirim%20dan%20menunggu%20moderasi.`);
+}
+
+async function pastikanAdmin() {
+  const auth = await createServerAuthClient();
+  const { data } = await auth.auth.getUser();
+  if (!data.user) redirect("/admin/login?error=Sesi%20admin%20sudah%20berakhir.");
+  return auth;
+}
+
+export async function ubahStatusUlasan(id, formData) {
+  const supabase = await pastikanAdmin();
+  await supabase.from("ulasan").update({ tampil: formData.get("tampil") === "true" }).eq("id", id);
+  redirect("/admin/ulasan");
+}
+
+export async function hapusUlasan(id) {
+  const supabase = await pastikanAdmin();
+  await supabase.from("ulasan").delete().eq("id", id);
+  redirect("/admin/ulasan");
+}
+
+export async function simpanBanner(formData) {
+  const supabase = await pastikanAdmin();
+  const id = Number(formData.get("id"));
+  const data = { judul: String(formData.get("judul") ?? "").trim(), teks: String(formData.get("teks") ?? "").trim() || null, gambar_url: String(formData.get("gambar_url") ?? "").trim() || null, tautan: String(formData.get("tautan") ?? "").trim() || null, aktif: formData.get("aktif") === "true", updated_at: new Date().toISOString() };
+  if (!data.judul || data.judul.length > 120) redirect("/admin?error=Judul%20banner%20wajib%20diisi.");
+  if (id) await supabase.from("banner_promo").update(data).eq("id", id);
+  else await supabase.from("banner_promo").insert(data);
+  redirect("/admin?success=Banner%20promo%20tersimpan.");
 }

@@ -1,6 +1,7 @@
 import KartuProduk from "@/components/KartuProduk";
 import { toko } from "@/lib/toko";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import TerakhirDilihat from "@/components/TerakhirDilihat";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +13,13 @@ export default async function HalamanKatalog({ searchParams }) {
   let daftarProduk = [];
   let daftarKategori = [];
   let pesanError = "";
+  let banner = null;
 
   try {
     const supabase = createServerSupabaseClient();
-    const query = supabase.from("produk").select("*");
+    const { data: bannerAktif } = await supabase.from("banner_promo").select("*").eq("aktif", true).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    banner = bannerAktif;
+    const query = supabase.from("produk").select("*").eq("aktif", true);
     if (cari) query.ilike("nama", `%${cari}%`);
     if (kategori) query.eq("kategori", kategori);
     const kolomUrutan = urutkan === "termurah" || urutkan === "termahal" ? "harga" : "created_at";
@@ -33,6 +37,7 @@ export default async function HalamanKatalog({ searchParams }) {
 
   return (
     <>
+      {banner ? <section className="my-6 rounded-2xl bg-harga-latar p-5"><h2 className="text-2xl font-extrabold text-harga">{banner.judul}</h2><p className="mt-1">{banner.teks}</p>{banner.tautan ? <a className="mt-3 inline-block font-bold text-utama" href={banner.tautan}>Lihat promo →</a> : null}</section> : null}
       <section className="relative my-6 overflow-hidden rounded-[2rem] bg-utama px-6 py-10 text-white sm:my-10 sm:px-10 sm:py-14">
         <div className="absolute -right-20 -top-28 h-72 w-72 rounded-full border-[34px] border-white/10" />
         <div className="absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-utama-gelap/50" />
@@ -89,6 +94,7 @@ export default async function HalamanKatalog({ searchParams }) {
             ))}
           </div>
         )}
+        <TerakhirDilihat />
       </section>
     </>
   );

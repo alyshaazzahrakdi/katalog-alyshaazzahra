@@ -2,6 +2,8 @@ import Link from "next/link";
 import { formatRupiah } from "@/lib/format";
 import { urlFotoTampil } from "@/lib/foto";
 import { TombolTambahKeranjang } from "@/components/Keranjang";
+import TombolFavorit from "@/components/TombolFavorit";
+import TombolBandingkan from "@/components/TombolBandingkan";
 
 export default function KartuProduk({ produk }) {
   return (
@@ -22,14 +24,17 @@ export default function KartuProduk({ produk }) {
       </div>
       </Link>
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <h3 className="font-bold leading-snug transition-colors group-hover:text-utama">{produk.nama}</h3>
+        <div className="flex items-start justify-between gap-2"><h3 className="font-bold leading-snug transition-colors group-hover:text-utama">{produk.nama}</h3><TombolFavorit id={produk.id} /></div>
         <div className="mt-auto flex items-center justify-between gap-2">
           <div><p className="text-sm font-extrabold text-harga">{formatRupiah(produk.harga_diskon || produk.harga)}</p>{produk.harga_diskon ? <del className="text-xs text-teks-lembut">{formatRupiah(produk.harga)}</del> : null}</div>
           <span className="text-xs font-semibold text-teks-lembut transition-colors group-hover:text-utama">
             Lihat detail →
           </span>
         </div>
-        {produk.status !== "habis" ? <TombolTambahKeranjang produk={produk} /> : <span className="text-sm font-bold text-bahaya">Habis</span>}
+        <div className="flex items-center justify-between gap-2">
+          {produk.status !== "habis" ? <TombolTambahKeranjang produk={produk} /> : <span className="text-sm font-bold text-bahaya">Habis</span>}
+          <TombolBandingkan produk={produk} />
+        </div>
       </div>
     </div>
   );

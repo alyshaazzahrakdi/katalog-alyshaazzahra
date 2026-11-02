@@ -19,6 +19,7 @@ export default function TombolWhatsApp({ produk }) {
         </select>
       </label>
       <a
+      onClick={() => { fetch("/api/whatsapp-click", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ produk_id: produk.id }) }).catch(() => {}); }}
       href={`https://wa.me/${toko.nomorWhatsApp}?text=${encodeURIComponent(pesan)}`}
       target="_blank"
       rel="noreferrer"
