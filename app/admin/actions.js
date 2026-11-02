@@ -171,3 +171,24 @@ export async function ubahProdukAdmin(id, formData) {
 
   redirect("/admin");
 }
+
+export async function hapusProdukAdmin(id) {
+  if (!id) {
+    redirect(`/admin?error=${encodeURIComponent("Produk yang akan dihapus tidak valid.")}`);
+  }
+
+  const supabase = await createServerAuthClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !userData.user) {
+    redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
+  }
+
+  const { error } = await supabase.from("produk").delete().eq("id", id);
+
+  if (error) {
+    redirect(`/admin?error=${encodeURIComponent("Produk gagal dihapus. " + error.message)}`);
+  }
+
+  redirect("/admin");
+}
