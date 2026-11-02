@@ -58,13 +58,13 @@ export default async function HalamanAdmin({ searchParams }) {
             name="ukuran"
             defaultValue={String(ukuran)}
             className="rounded-lg border border-garis bg-latar px-3 py-2"
-            onChange={(event) => event.currentTarget.form?.requestSubmit()}
           >
             {pilihanUkuran.map((nilai) => (
               <option key={nilai} value={nilai}>{nilai}</option>
             ))}
           </select>
           <input type="hidden" name="halaman" value="1" />
+          <Tombol type="submit" varian="garis">Terapkan</Tombol>
           <span>data per halaman</span>
         </form>
         <div className="flex items-center gap-3">
