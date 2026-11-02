@@ -32,12 +32,37 @@ export default async function HalamanAdmin({ searchParams }) {
   }
 
   return (
-    <div className="flex flex-col gap-6 py-8">
+    <div className="flex flex-col gap-6 py-8 sm:gap-8 sm:py-10">
       <NavAdmin />
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold">Produk</h1>
-        {/* US-08 (bonus): tambah produk */}
-        <Tombol href="/admin/produk/baru">Tambah produk</Tombol>
+      <section className="relative overflow-hidden rounded-[2rem] bg-utama px-6 py-8 text-white shadow-[0_18px_45px_rgba(31,107,79,0.18)] sm:px-10 sm:py-10">
+        <div className="absolute -right-16 -top-20 h-52 w-52 rounded-full border-[24px] border-white/10" />
+        <div className="absolute -bottom-24 right-24 h-40 w-40 rounded-full bg-white/5" />
+        <div className="relative flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-white/70">Ruang kerja admin</p>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">Kelola katalog toko</h1>
+            <p className="mt-3 max-w-lg text-sm leading-6 text-white/80">
+              Atur produk, foto, harga, dan informasi katalog dari satu tempat.
+            </p>
+          </div>
+          <Tombol href="/admin/produk/baru" className="border border-white/20 bg-white text-utama hover:bg-white/90">
+            + Tambah produk
+          </Tombol>
+        </div>
+      </section>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-garis bg-latar p-5 shadow-sm">
+          <p className="text-sm text-teks-lembut">Total produk</p>
+          <p className="mt-2 text-3xl font-extrabold text-utama">{count ?? 0}</p>
+        </div>
+        <div className="rounded-2xl border border-garis bg-permukaan p-5">
+          <p className="text-sm text-teks-lembut">Tampilan halaman</p>
+          <p className="mt-2 text-3xl font-extrabold">{ukuran} <span className="text-base font-semibold text-teks-lembut">data</span></p>
+        </div>
+        <div className="rounded-2xl border border-garis bg-harga-latar p-5">
+          <p className="text-sm text-harga">Status katalog</p>
+          <p className="mt-2 text-lg font-extrabold text-harga">{count ? "Aktif dan siap dilihat" : "Belum ada produk"}</p>
+        </div>
       </div>
       {typeof params?.error === "string" ? (
         <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-bahaya">
@@ -45,14 +70,22 @@ export default async function HalamanAdmin({ searchParams }) {
         </p>
       ) : null}
       {typeof params?.success === "string" ? (
-        <p className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-utama">
-          {params.success}
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-utama"
+        >
+          ✓ {params.success}
         </p>
       ) : null}
-      <TabelProduk daftarProduk={daftarProduk ?? []} />
-      <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
-        <form className="flex items-center gap-2" method="get">
-          <label htmlFor="ukuran">Tampilkan</label>
+      <section className="overflow-hidden rounded-[1.5rem] border border-garis bg-latar shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-garis bg-permukaan/60 px-5 py-4">
+          <div>
+            <h2 className="font-extrabold">Daftar produk</h2>
+            <p className="mt-1 text-sm text-teks-lembut">Pilih produk untuk menghapus beberapa data sekaligus.</p>
+          </div>
+          <form className="flex items-center gap-2 text-sm" method="get">
+            <label htmlFor="ukuran" className="text-teks-lembut">Tampilkan</label>
           <select
             id="ukuran"
             name="ukuran"
@@ -65,8 +98,12 @@ export default async function HalamanAdmin({ searchParams }) {
           </select>
           <input type="hidden" name="halaman" value="1" />
           <Tombol type="submit" varian="garis">Terapkan</Tombol>
-          <span>data per halaman</span>
-        </form>
+          </form>
+        </div>
+        <TabelProduk daftarProduk={daftarProduk ?? []} />
+      </section>
+      <div className="flex flex-wrap items-center justify-between gap-4 text-sm">
+        <span className="text-teks-lembut">Menampilkan {daftarProduk?.length ?? 0} dari {count ?? 0} produk</span>
         <div className="flex items-center gap-3">
           <span className="text-teks-lembut">
             Halaman {nomorHalaman} dari {jumlahHalaman}

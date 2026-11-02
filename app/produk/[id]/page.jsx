@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import TombolWhatsApp from "@/components/TombolWhatsApp";
 import { formatRupiah } from "@/lib/format";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { urlFotoTampil } from "@/lib/foto";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function HalamanDetailProduk({ params }) {
       <div className="mt-6 grid overflow-hidden rounded-[2rem] border border-garis bg-latar shadow-[0_18px_55px_rgba(27,36,32,0.08)] md:grid-cols-[1.05fr_0.95fr]">
         <div className="relative min-h-72 bg-permukaan md:min-h-[520px]">
           <img
-            src={produk.foto_url}
+            src={urlFotoTampil(produk.foto_url)}
             alt={produk.nama}
             className="h-full min-h-72 w-full object-contain p-4 md:min-h-[520px]"
           />

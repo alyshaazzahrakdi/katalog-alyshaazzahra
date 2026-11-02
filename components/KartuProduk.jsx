@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { formatRupiah } from "@/lib/format";
+import { urlFotoTampil } from "@/lib/foto";
 
 export default function KartuProduk({ produk }) {
   return (
@@ -9,7 +10,7 @@ export default function KartuProduk({ produk }) {
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-permukaan">
         <img
-          src={produk.foto_url}
+          src={urlFotoTampil(produk.foto_url)}
           alt={produk.nama}
           className="h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
         />

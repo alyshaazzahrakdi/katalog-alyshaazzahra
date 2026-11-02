@@ -36,7 +36,7 @@ function normalisasiUrlFoto(nilai) {
     if (parsedUrl.hostname === "drive.google.com") {
       const fileId = parsedUrl.pathname.match(/^\/file\/d\/([^/]+)/)?.[1] || parsedUrl.searchParams.get("id");
       if (fileId) {
-        return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(fileId)}`;
+        return `https://lh3.googleusercontent.com/d/${encodeURIComponent(fileId)}`;
       }
     }
 

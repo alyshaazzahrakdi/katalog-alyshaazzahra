@@ -23,7 +23,7 @@ export default function FormProduk({ produk = {}, labelTombol, action }) {
         defaultValue={produk.foto_url}
       />
       <p className="-mt-2 text-xs font-normal text-teks-lembut">
-        Alternatif hemat storage: tempel link Google Drive dengan akses “Siapa saja yang memiliki link”.
+        Alternatif hemat storage: tempel link Google Drive dengan akses “Siapa saja yang memiliki link”. Sistem akan mengubahnya menjadi link gambar langsung.
       </p>
       <Input
         label={produk.foto_url ? "Ganti foto produk (opsional)" : "Foto produk (opsional)"}

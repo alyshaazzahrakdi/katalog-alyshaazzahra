@@ -4,6 +4,7 @@ import { formatRupiah } from "@/lib/format";
 import Tombol from "@/components/Tombol";
 import { hapusProdukAdmin, hapusProdukTerpilihAdmin } from "@/app/admin/actions";
 import { useState } from "react";
+import { urlFotoTampil } from "@/lib/foto";
 
 export default function TabelProduk({ daftarProduk }) {
   const [terpilih, setTerpilih] = useState([]);
@@ -17,7 +18,7 @@ export default function TabelProduk({ daftarProduk }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <form action={hapusProdukTerpilihAdmin} className="flex justify-end">
+      <form action={hapusProdukTerpilihAdmin} className="flex justify-end px-5 pt-4">
         {terpilih.map((id) => <input key={id} type="hidden" name="produk_id" value={id} />)}
         <Tombol type="submit" varian="bahaya" disabled={terpilih.length === 0}>
           Hapus yang dipilih ({terpilih.length})
@@ -45,7 +46,7 @@ export default function TabelProduk({ daftarProduk }) {
         </thead>
         <tbody>
           {daftarProduk.map((produk) => (
-            <tr key={produk.id} className="border-t border-garis">
+            <tr key={produk.id} className="border-t border-garis transition-colors hover:bg-permukaan/50">
               <td className="px-4 py-3">
                 <input
                   type="checkbox"
@@ -56,8 +57,10 @@ export default function TabelProduk({ daftarProduk }) {
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <img src={produk.foto_url} alt="" className="h-10 w-10 rounded-md object-contain" />
-                  <span className="font-semibold">{produk.nama}</span>
+                  <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-garis bg-permukaan">
+                    <img src={urlFotoTampil(produk.foto_url)} alt="" className="h-full w-full object-contain" />
+                  </div>
+                  <span className="font-bold">{produk.nama}</span>
                 </div>
               </td>
               <td className="px-4 py-3 text-teks-lembut">{produk.kategori}</td>
