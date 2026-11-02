@@ -56,7 +56,7 @@ export default function TabelProduk({ daftarProduk }) {
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <img src={produk.foto_url} alt="" className="h-10 w-10 rounded-md object-cover" />
+                  <img src={produk.foto_url} alt="" className="h-10 w-10 rounded-md object-contain" />
                   <span className="font-semibold">{produk.nama}</span>
                 </div>
               </td>

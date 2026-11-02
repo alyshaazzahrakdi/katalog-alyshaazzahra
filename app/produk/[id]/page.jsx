@@ -33,7 +33,7 @@ export default async function HalamanDetailProduk({ params }) {
           <img
             src={produk.foto_url}
             alt={produk.nama}
-            className="h-full min-h-72 w-full object-cover md:min-h-[520px]"
+            className="h-full min-h-72 w-full object-contain p-4 md:min-h-[520px]"
           />
           {produk.kategori ? (
             <span className="absolute left-5 top-5 rounded-full bg-latar/90 px-4 py-2 text-xs font-bold text-utama shadow-sm">

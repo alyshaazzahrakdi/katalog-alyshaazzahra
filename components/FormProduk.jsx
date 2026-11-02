@@ -29,11 +29,11 @@ export default function FormProduk({ produk = {}, labelTombol, action }) {
         label={produk.foto_url ? "Ganti foto produk (opsional)" : "Foto produk (opsional)"}
         name="foto"
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif"
+        accept="image/*"
       />
       {produk.foto_url ? <input type="hidden" name="foto_url_lama" value={produk.foto_url} /> : null}
       <p className="-mt-2 text-xs font-normal text-teks-lembut">
-        Atau upload ke Storage: JPG, PNG, WEBP, atau GIF, maksimal 5 MB. Jika keduanya diisi, file upload dipakai.
+        Format gambar yang didukung: JPG, PNG, GIF, WEBP, BMP, TIFF, atau AVIF. Maksimal 5 MB. File Word, PHP, dan file palsu akan ditolak.
       </p>
       <Input label="Deskripsi" name="deskripsi" textarea defaultValue={produk.deskripsi} />
       <div className="flex gap-3">

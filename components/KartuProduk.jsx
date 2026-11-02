@@ -11,7 +11,7 @@ export default function KartuProduk({ produk }) {
         <img
           src={produk.foto_url}
           alt={produk.nama}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+          className="h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
         />
         {produk.kategori ? (
           <span className="absolute left-3 top-3 rounded-full bg-latar/90 px-3 py-1 text-[11px] font-bold text-utama shadow-sm">

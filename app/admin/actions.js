@@ -7,7 +7,22 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const BUCKET_FOTO_PRODUK = "produk";
 const UKURAN_MAKSIMAL_FOTO = 5 * 1024 * 1024;
-const TIPE_FOTO_DIIJINKAN = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const TIPE_FOTO_DIIJINKAN = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp", "image/tiff", "image/avif"];
+
+function cocokDenganAwalan(bytes, awalan) {
+  return awalan.every((nilai, index) => bytes[index] === nilai);
+}
+
+function deteksiTipeFoto(bytes) {
+  if (cocokDenganAwalan(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";
+  if (cocokDenganAwalan(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
+  if (cocokDenganAwalan(bytes, [0x47, 0x49, 0x46, 0x38])) return "image/gif";
+  if (cocokDenganAwalan(bytes, [0x42, 0x4d])) return "image/bmp";
+  if (cocokDenganAwalan(bytes, [0x49, 0x49, 0x2a, 0x00]) || cocokDenganAwalan(bytes, [0x4d, 0x4d, 0x00, 0x2a])) return "image/tiff";
+  if (cocokDenganAwalan(bytes, [0x52, 0x49, 0x46, 0x46]) && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP") return "image/webp";
+  if (String.fromCharCode(...bytes.slice(4, 12)) === "ftypavif") return "image/avif";
+  return null;
+}
 
 function normalisasiUrlFoto(nilai) {
   const url = String(nilai ?? "").trim();
@@ -37,34 +52,35 @@ function normalisasiUrlFoto(nilai) {
   return url;
 }
 
-function ambilFileFoto(formData, halamanError) {
+async function ambilFileFoto(formData, halamanError) {
   const file = formData.get("foto");
 
   if (!file || typeof file === "string" || file.size === 0) {
     return null;
   }
 
-  if (!TIPE_FOTO_DIIJINKAN.includes(file.type)) {
-    redirect(`${halamanError}?error=${encodeURIComponent("Foto harus berformat JPG, PNG, WEBP, atau GIF.")}`);
-  }
-
   if (file.size > UKURAN_MAKSIMAL_FOTO) {
     redirect(`${halamanError}?error=${encodeURIComponent("Ukuran foto maksimal 5 MB.")}`);
   }
 
-  return file;
+  const tipeFoto = deteksiTipeFoto(new Uint8Array(await file.arrayBuffer()));
+  if (!tipeFoto) {
+    redirect(`${halamanError}?error=${encodeURIComponent("File bukan gambar yang valid. Word, PHP, dan file yang hanya diganti ekstensinya tidak diperbolehkan.")}`);
+  }
+
+  return { file, tipeFoto };
 }
 
-async function unggahFotoProduk(file, halamanError) {
-  if (!file) {
+async function unggahFotoProduk(foto, halamanError) {
+  if (!foto) {
     return null;
   }
 
-  const ekstensi = file.type.split("/")[1].replace("jpeg", "jpg");
+  const ekstensi = foto.tipeFoto.split("/")[1].replace("jpeg", "jpg").replace("tiff", "tif");
   const path = `${crypto.randomUUID()}.${ekstensi}`;
   const supabase = createServerSupabaseClient();
-  const { error } = await supabase.storage.from(BUCKET_FOTO_PRODUK).upload(path, file, {
-    contentType: file.type,
+  const { error } = await supabase.storage.from(BUCKET_FOTO_PRODUK).upload(path, foto.file, {
+    contentType: foto.tipeFoto,
     upsert: false,
   });
 
@@ -215,7 +231,7 @@ export async function tambahProdukAdmin(formData) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
 
-  const foto = await unggahFotoProduk(ambilFileFoto(formData, "/admin/produk/baru"), "/admin/produk/baru");
+  const foto = await unggahFotoProduk(await ambilFileFoto(formData, "/admin/produk/baru"), "/admin/produk/baru");
   const { error } = await supabase.from("produk").insert({
     nama,
     harga,
@@ -247,7 +263,7 @@ export async function ubahProdukAdmin(id, formData) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
 
-  const fileFoto = ambilFileFoto(formData, `/admin/produk/${id}/ubah`);
+  const fileFoto = await ambilFileFoto(formData, `/admin/produk/${id}/ubah`);
   const fotoBaru = await unggahFotoProduk(fileFoto, `/admin/produk/${id}/ubah`);
   const { error } = await supabase
     .from("produk")
