@@ -4,22 +4,29 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function HalamanKatalog() {
+export default async function HalamanKatalog({ searchParams }) {
+  const params = await searchParams;
+  const cari = typeof params?.cari === "string" ? params.cari.trim() : "";
+  const kategori = typeof params?.kategori === "string" ? params.kategori.trim() : "";
+  const urutkan = ["terbaru", "termurah", "termahal"].includes(params?.urutkan) ? params.urutkan : "terbaru";
   let daftarProduk = [];
+  let daftarKategori = [];
   let pesanError = "";
 
   try {
     const supabase = createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from("produk")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const query = supabase.from("produk").select("*");
+    if (cari) query.ilike("nama", `%${cari}%`);
+    if (kategori) query.eq("kategori", kategori);
+    const kolomUrutan = urutkan === "termurah" || urutkan === "termahal" ? "harga" : "created_at";
+    const { data, error } = await query.order(kolomUrutan, { ascending: urutkan !== "termahal" });
 
     if (error) {
       throw error;
     }
 
     daftarProduk = data ?? [];
+    daftarKategori = [...new Set(daftarProduk.map((produk) => produk.kategori).filter(Boolean))].sort();
   } catch (error) {
     pesanError = `Produk belum dapat dimuat. ${error.message}`;
   }
@@ -50,6 +57,19 @@ export default async function HalamanKatalog() {
               Temukan favoritmu
             </h2>
           </div>
+          <form method="get" className="grid gap-3 rounded-2xl border border-garis bg-permukaan p-4 sm:grid-cols-[1fr_auto_auto_auto]">
+            <input name="cari" defaultValue={cari} placeholder="Cari nama produk..." className="rounded-lg border border-garis bg-latar px-3 py-2.5" />
+            <select name="kategori" defaultValue={kategori} className="rounded-lg border border-garis bg-latar px-3 py-2.5">
+              <option value="">Semua kategori</option>
+              {daftarKategori.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+            <select name="urutkan" defaultValue={urutkan} className="rounded-lg border border-garis bg-latar px-3 py-2.5">
+              <option value="terbaru">Terbaru</option>
+              <option value="termurah">Termurah</option>
+              <option value="termahal">Termahal</option>
+            </select>
+            <button type="submit" className="rounded-lg bg-utama px-4 py-2.5 font-semibold text-white">Terapkan</button>
+          </form>
           {daftarProduk.length > 0 ? (
             <span className="hidden text-sm text-teks-lembut sm:block">{daftarProduk.length} produk tersedia</span>
           ) : null}

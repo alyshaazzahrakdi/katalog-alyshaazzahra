@@ -111,6 +111,28 @@ async function hapusFotoProduk(url) {
   }
 }
 
+export async function buatDeskripsiAI(previousState, formData) {
+    const nama = String(formData.get("nama") ?? "").trim();
+    const kategori = String(formData.get("kategori") ?? "").trim();
+    if (!nama) return { error: "Isi nama produk terlebih dahulu." };
+    if (!process.env.GEMINI_API_KEY) return { error: "GEMINI_API_KEY belum dikonfigurasi di environment server." };
+
+    const prompt = `Tulis deskripsi produk dalam bahasa Indonesia untuk katalog UMKM. Nama: ${nama}. Kategori: ${kategori || "umum"}. Buat 2-3 kalimat, jelas, menarik, tanpa klaim kesehatan dan tanpa markdown.`;
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        cache: "no-store",
+      },
+    );
+    if (!response.ok) return { error: "Deskripsi AI gagal dibuat. Periksa konfigurasi Gemini API." };
+    const data = await response.json();
+    const description = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    return description ? { description } : { error: "Gemini tidak mengembalikan deskripsi." };
+}
+
 export async function loginAdmin(formData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");

@@ -7,6 +7,11 @@ import RecoveryHashHandler from "@/app/auth/RecoveryHashHandler";
 export const metadata = {
   title: toko.nama,
   description: toko.tagline,
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport = {
+  themeColor: "#1f6b4f",
 };
 
 export default function RootLayout({ children }) {

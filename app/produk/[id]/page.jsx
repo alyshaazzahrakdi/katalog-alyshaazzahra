@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import TombolWhatsApp from "@/components/TombolWhatsApp";
+import KartuProduk from "@/components/KartuProduk";
 import { formatRupiah } from "@/lib/format";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { urlFotoTampil } from "@/lib/foto";
@@ -23,6 +24,14 @@ export default async function HalamanDetailProduk({ params }) {
   if (!produk) {
     notFound();
   }
+  const { data: produkTerkait, error: terkaitError } = await supabase
+    .from("produk")
+    .select("*")
+    .eq("kategori", produk.kategori)
+    .neq("id", produk.id)
+    .order("created_at", { ascending: false })
+    .limit(4);
+  if (terkaitError) throw terkaitError;
 
   return (
     <article className="py-6 sm:py-10">
@@ -60,6 +69,14 @@ export default async function HalamanDetailProduk({ params }) {
           </p>
         </div>
       </div>
+      {produkTerkait?.length ? (
+        <section className="mt-10" aria-labelledby="produk-terkait">
+          <h2 id="produk-terkait" className="mb-5 text-2xl font-extrabold">Produk terkait</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            {produkTerkait.map((item) => <KartuProduk key={item.id} produk={item} />)}
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }
