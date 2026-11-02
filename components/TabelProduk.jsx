@@ -1,13 +1,40 @@
+"use client";
+
 import { formatRupiah } from "@/lib/format";
 import Tombol from "@/components/Tombol";
-import { hapusProdukAdmin } from "@/app/admin/actions";
+import { hapusProdukAdmin, hapusProdukTerpilihAdmin } from "@/app/admin/actions";
+import { useState } from "react";
 
 export default function TabelProduk({ daftarProduk }) {
+  const [terpilih, setTerpilih] = useState([]);
+  const semuaTerpilih = daftarProduk.length > 0 && terpilih.length === daftarProduk.length;
+
+  function ubahPilihan(id) {
+    setTerpilih((pilihan) => (
+      pilihan.includes(id) ? pilihan.filter((item) => item !== id) : [...pilihan, id]
+    ));
+  }
+
   return (
-    <div className="overflow-x-auto rounded-2xl border border-garis">
-      <table className="w-full min-w-[560px] text-left text-sm">
+    <div className="flex flex-col gap-3">
+      <form action={hapusProdukTerpilihAdmin} className="flex justify-end">
+        {terpilih.map((id) => <input key={id} type="hidden" name="produk_id" value={id} />)}
+        <Tombol type="submit" varian="bahaya" disabled={terpilih.length === 0}>
+          Hapus yang dipilih ({terpilih.length})
+        </Tombol>
+      </form>
+      <div className="overflow-x-auto rounded-2xl border border-garis">
+      <table className="w-full min-w-[620px] text-left text-sm">
         <thead className="bg-permukaan text-teks-lembut">
           <tr>
+            <th className="w-12 px-4 py-3">
+              <input
+                type="checkbox"
+                aria-label="Pilih semua produk di halaman ini"
+                checked={semuaTerpilih}
+                onChange={() => setTerpilih(semuaTerpilih ? [] : daftarProduk.map((produk) => produk.id))}
+              />
+            </th>
             <th className="px-4 py-3 font-semibold">Produk</th>
             <th className="px-4 py-3 font-semibold">Kategori</th>
             <th className="px-4 py-3 font-semibold">Harga</th>
@@ -19,6 +46,14 @@ export default function TabelProduk({ daftarProduk }) {
         <tbody>
           {daftarProduk.map((produk) => (
             <tr key={produk.id} className="border-t border-garis">
+              <td className="px-4 py-3">
+                <input
+                  type="checkbox"
+                  aria-label={`Pilih ${produk.nama}`}
+                  checked={terpilih.includes(produk.id)}
+                  onChange={() => ubahPilihan(produk.id)}
+                />
+              </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
                   <img src={produk.foto_url} alt="" className="h-10 w-10 rounded-md object-cover" />
@@ -44,6 +79,7 @@ export default function TabelProduk({ daftarProduk }) {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }
