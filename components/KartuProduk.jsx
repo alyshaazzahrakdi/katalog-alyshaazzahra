@@ -1,23 +1,17 @@
 import Link from "next/link";
 import { formatRupiah } from "@/lib/format";
-import { urlFotoTampil } from "@/lib/foto";
+import GambarProduk from "@/components/GambarProduk";
 import { TombolTambahKeranjang } from "@/components/Keranjang";
 import TombolFavorit from "@/components/TombolFavorit";
 import TombolBandingkan from "@/components/TombolBandingkan";
 import { slugKategori } from "@/lib/kategori";
 
 export default function KartuProduk({ produk }) {
-  const fotoProduk = produk.foto_url || (Array.isArray(produk.foto_urls) ? produk.foto_urls.find(Boolean) : "");
-
   return (
     <div className="group flex flex-col overflow-hidden rounded-3xl border border-garis bg-latar shadow-sm transition duration-300 hover:-translate-y-1 hover:border-utama/40 hover:shadow-[0_16px_35px_rgba(31,107,79,0.12)]">
       <div className="relative aspect-[4/3] overflow-hidden bg-permukaan">
         <Link href={`/produk/${produk.id}`} className="block h-full">
-          <img
-            src={urlFotoTampil(fotoProduk)}
-            alt={produk.nama}
-            className="h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105"
-          />
+          <GambarProduk produk={produk} alt={produk.nama} className="h-full w-full object-contain p-2 transition duration-500 group-hover:scale-105" />
         </Link>
         {produk.badge ? <span className="absolute right-2 top-2 max-w-[55%] truncate rounded-full bg-harga-latar px-2 py-1 text-[10px] font-bold text-harga sm:right-3 sm:top-3 sm:px-3 sm:text-[11px]">{produk.badge}</span> : null}
         {produk.kategori ? (

@@ -67,7 +67,23 @@ insert into public.pengaturan_toko (id, nama, tagline, nomor_whatsapp, alamat, j
 values (1, 'Toko Beans Coffe', 'Beans Terbaik untuk temani harimu, siap dipesan lewat WhatsApp.', '6282119369226', 'Jl. merdeka', 'Setiap hari, 08.00–20.00')
 on conflict (id) do nothing;
 
--- 4. Data produk awal (hanya diisi jika tabel masih kosong)
+-- 4. Ulasan pelanggan
+create table if not exists public.ulasan (
+  id bigint generated always as identity primary key,
+  produk_id bigint not null references public.produk(id) on delete cascade,
+  nama text not null check (char_length(nama) between 2 and 80),
+  rating integer not null check (rating between 1 and 5),
+  komentar text not null check (char_length(komentar) between 3 and 1000),
+  tampil boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.ulasan enable row level security;
+drop policy if exists "admin_kelola_ulasan" on public.ulasan;
+create policy "admin_kelola_ulasan" on public.ulasan
+  for all to authenticated using (true) with check (true);
+
+-- 5. Data produk awal (hanya diisi jika tabel masih kosong)
 insert into public.produk (nama, harga, deskripsi, foto_url, kategori)
 select * from (values
   ('Kopi Bubuk Robusta 250 g', 45000, 'Biji robusta disangrai sedang lalu digiling halus. Cocok untuk kopi tubruk dan kopi susu.', '/produk/kopi.svg', 'Minuman'),
@@ -79,7 +95,7 @@ select * from (values
 ) as data_awal (nama, harga, deskripsi, foto_url, kategori)
 where not exists (select 1 from public.produk);
 
--- 5. Data tambahan untuk menguji paginasi, urutan, filter, dan pencarian (54 produk).
+-- 6. Data tambahan untuk menguji paginasi, urutan, filter, dan pencarian (54 produk).
 --    Bersama data awal jadi 60 produk, 10 per kategori, dengan harga dan waktu dibuat berbeda.
 --    Hanya diisi sekali; kalau tidak dibutuhkan, hapus dengan:
 --    delete from public.produk where deskripsi like 'Contoh untuk uji paginasi%';

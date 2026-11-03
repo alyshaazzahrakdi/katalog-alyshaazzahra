@@ -65,9 +65,9 @@ function hasilImpor(query) {
 }
 
 function ambilVarian(formData) {
-  const baris = String(formData.get("varian") ?? "").split(/\r?\n/).map((baris) => baris.trim()).filter(Boolean);
+  const barisVarian = String(formData.get("varian") ?? "").split(/\r?\n/).map((baris) => baris.trim()).filter(Boolean);
   const varian = [];
-  for (const baris of baris) {
+  for (const baris of barisVarian) {
     const [nama, hargaTeks] = baris.split("|").map((nilai) => nilai.trim());
     const harga = Number(hargaTeks);
     if (!nama || !Number.isInteger(harga) || harga < 0 || nama.length > 80) return { error: "Format varian harus Nama|Harga, dengan harga bilangan bulat 0 atau lebih." };
@@ -140,10 +140,12 @@ function normalisasiUrlFoto(nilai) {
 
   try {
     const parsedUrl = new URL(url);
-    if (parsedUrl.hostname === "drive.google.com") {
-      const fileId = parsedUrl.pathname.match(/^\/file\/d\/([^/]+)/)?.[1] || parsedUrl.searchParams.get("id");
+    if (["drive.google.com", "docs.google.com", "lh3.googleusercontent.com", "drive.usercontent.google.com"].includes(parsedUrl.hostname)) {
+      const fileId = parsedUrl.pathname.match(/\/file\/d\/([^/]+)/)?.[1]
+        || parsedUrl.searchParams.get("id")
+        || parsedUrl.pathname.match(/\/d\/([^/]+)/)?.[1];
       if (fileId) {
-        return `https://lh3.googleusercontent.com/d/${encodeURIComponent(fileId)}`;
+        return `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w1200`;
       }
     }
 
@@ -474,16 +476,24 @@ export async function ubahProdukAdmin(id, formData) {
   const fotoBaru = await unggahFotoProduk(fileFoto, `/admin/produk/${id}/ubah`);
   const fotoLama = normalisasiUrlFoto(formData.get("foto_url")) || produkLama.foto_url;
   const fotoTambahan = ambilLinkFoto(formData);
-  const daftarFotoLama = Array.isArray(produkLama.foto_urls) ? produkLama.foto_urls.filter(Boolean) : [];
-  const daftarFoto = fotoBaru
-    ? [fotoBaru.url, ...fotoTambahan]
-    : fotoTambahan.length
-      ? fotoTambahan
-      : daftarFotoLama.length
-        ? daftarFotoLama
-        : fotoLama
-          ? [fotoLama]
-          : [];
+  const daftarFotoLama = Array.isArray(produkLama.foto_urls)
+    ? produkLama.foto_urls.filter(Boolean)
+    : typeof produkLama.foto_urls === "string"
+      ? (() => {
+        try {
+          const hasil = JSON.parse(produkLama.foto_urls);
+          return Array.isArray(hasil) ? hasil.filter(Boolean) : [];
+        } catch {
+          return [];
+        }
+      })()
+      : [];
+  const daftarFoto = [...new Set([
+    fotoBaru?.url,
+    fotoLama,
+    ...fotoTambahan,
+    ...daftarFotoLama,
+  ].filter(Boolean))];
   const { error } = await supabase
     .from("produk")
     .update({
@@ -569,7 +579,13 @@ export async function kirimUlasan(formData) {
   const supabase = createServerSupabaseClient();
   const { count } = await supabase.from("ulasan").select("id", { count: "exact", head: true }).eq("produk_id", produkId).gte("created_at", new Date(Date.now() - 3600000).toISOString());
   if ((count ?? 0) >= 3) redirect(`/produk/${produkId}?error=Batas%20kiriman%20ulasan%20tercapai.`);
-  await supabase.from("ulasan").insert({ produk_id: produkId, nama, komentar, rating });
+  const { error: ulasanError } = await supabase
+    .from("ulasan")
+    .insert({ produk_id: produkId, nama, komentar, rating });
+  if (ulasanError) {
+    console.error("Ulasan gagal disimpan:", ulasanError.message);
+    redirect(`/produk/${produkId}?error=${encodeURIComponent("Ulasan gagal disimpan. Pastikan migrasi tabel ulasan sudah dijalankan.")}`);
+  }
   redirect(`/produk/${produkId}?success=Ulasan%20dikirim%20dan%20menunggu%20moderasi.`);
 }
 

@@ -17,6 +17,19 @@ import AsistenProduk from "@/components/AsistenProduk";
 
 export const dynamic = "force-dynamic";
 
+function BintangRating({ nilai, ukuran = "h-5 w-5" }) {
+  const jumlah = Math.max(0, Math.min(5, Number(nilai) || 0));
+  return (
+    <span className="inline-flex items-center gap-0.5 text-harga" aria-label={`Rating ${jumlah} dari 5`}>
+      {Array.from({ length: 5 }, (_, index) => (
+        <svg key={index} aria-hidden="true" viewBox="0 0 24 24" className={`${ukuran} ${index < jumlah ? "fill-current" : "fill-none"} stroke-current`} strokeWidth="1.8">
+          <path strokeLinecap="round" strokeLinejoin="round" d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
 export async function generateMetadata({ params }) {
   const { id } = await params;
   if (!/^\d+$/.test(id)) return { title: "Produk tidak ditemukan" };
@@ -30,10 +43,13 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function HalamanDetailProduk({ params }) {
+export default async function HalamanDetailProduk({ params, searchParams }) {
   const { id } = await params;
   if (!/^\d+$/.test(id)) notFound();
   const toko = await ambilPengaturanToko();
+  const query = await searchParams;
+  const pesanError = typeof query?.error === "string" ? query.error : "";
+  const pesanSukses = typeof query?.success === "string" ? query.success : "";
   const supabase = createServerSupabaseClient();
   const { data: produk, error } = await supabase
     .from("produk")
@@ -101,10 +117,12 @@ export default async function HalamanDetailProduk({ params }) {
         </div>
       </div>
       <section className="mt-8 rounded-2xl border border-garis bg-latar p-5 sm:p-6">
+        {pesanError ? <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-bahaya">{pesanError}</p> : null}
+        {pesanSukses ? <p role="status" className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-utama">{pesanSukses}</p> : null}
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-utama">Percakapan pelanggan</p>
-            <h2 className="mt-1 text-2xl font-extrabold">Penilaian produk {rataRata ? <span className="text-harga">★ {rataRata}/5</span> : null}</h2>
+            <h2 className="mt-1 flex flex-wrap items-center gap-2 text-2xl font-extrabold">Penilaian produk {rataRata ? <span className="inline-flex items-center gap-1"><BintangRating nilai={rataRata} ukuran="h-4 w-4" /> <span className="text-sm text-teks-lembut">{rataRata}/5</span></span> : null}</h2>
           </div>
           <span className="text-sm text-teks-lembut">{ulasan?.length || 0} penilaian</span>
         </div>
@@ -115,7 +133,7 @@ export default async function HalamanDetailProduk({ params }) {
           <textarea required name="komentar" maxLength="1000" placeholder="Tulis ulasan..." className="rounded-lg border border-garis px-3 py-2" />
           <button className="rounded-lg bg-utama px-4 py-2 font-semibold text-white">Kirim ulasan</button>
         </form>
-        <div className="mt-6 grid gap-3">{(ulasan ?? []).map((item) => <article key={item.id} className="rounded-xl bg-permukaan p-4"><div className="flex flex-wrap items-center justify-between gap-2"><strong>{item.nama}</strong><span className="text-sm text-harga">{"★".repeat(item.rating)} <span className="text-teks-lembut">{item.rating}/5</span></span></div><p className="mt-2 break-words leading-6 text-teks-lembut">{item.komentar}</p></article>)}{!ulasan?.length ? <p className="rounded-xl bg-permukaan p-4 text-teks-lembut">Belum ada penilaian. Jadilah pelanggan pertama yang memberi penilaian.</p> : null}</div>
+        <div className="mt-6 grid gap-3">{(ulasan ?? []).map((item) => <article key={item.id} className="rounded-xl bg-permukaan p-4"><div className="flex flex-wrap items-center justify-between gap-2"><strong>{item.nama}</strong><span className="inline-flex items-center gap-1"><BintangRating nilai={item.rating} ukuran="h-4 w-4" /><span className="text-sm text-teks-lembut">{item.rating}/5</span></span></div><p className="mt-2 break-words leading-6 text-teks-lembut">{item.komentar}</p></article>)}{!ulasan?.length ? <p className="rounded-xl bg-permukaan p-4 text-teks-lembut">Belum ada penilaian. Jadilah pelanggan pertama yang memberi penilaian.</p> : null}</div>
       </section>
       {produkTerkait?.length ? (
         <section className="mt-10" aria-labelledby="produk-terkait">

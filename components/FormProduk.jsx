@@ -15,7 +15,7 @@ export default function FormProduk({ produk = {}, nilaiForm = {}, errors = {}, l
   }, [state.description]);
 
   return (
-    <form action={action} encType="multipart/form-data" className="flex max-w-xl flex-col gap-4">
+    <form action={action} className="flex max-w-xl flex-col gap-4">
       <Input label="Nama produk" name="nama" defaultValue={nilai("nama")} error={errors.nama} required />
       <Input
         label="Harga (Rp)"

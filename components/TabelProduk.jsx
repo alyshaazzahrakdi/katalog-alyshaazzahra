@@ -4,7 +4,7 @@ import { formatRupiah } from "@/lib/format";
 import Tombol from "@/components/Tombol";
 import { hapusProdukAdmin, hapusProdukTerpilihAdmin, ubahStatusProdukAdmin, ubahUrutanProdukAdmin } from "@/app/admin/actions";
 import { useState } from "react";
-import { urlFotoTampil } from "@/lib/foto";
+import GambarProduk from "@/components/GambarProduk";
 
 export default function TabelProduk({ daftarProduk }) {
   const [terpilih, setTerpilih] = useState([]);
@@ -24,10 +24,6 @@ export default function TabelProduk({ daftarProduk }) {
     if (!window.confirm(pesan)) {
       event.preventDefault();
     }
-  }
-
-  function fotoProduk(produk) {
-    return produk?.foto_url || (Array.isArray(produk?.foto_urls) ? produk.foto_urls.find(Boolean) : "");
   }
 
   return (
@@ -73,7 +69,7 @@ export default function TabelProduk({ daftarProduk }) {
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-garis bg-permukaan">
-                    <img src={urlFotoTampil(fotoProduk(produk))} alt="" className="h-full w-full object-contain" />
+                    <GambarProduk produk={produk} alt="" className="h-full w-full object-contain" />
                   </div>
                   <span className="font-bold">{produk.nama}</span>
                 </div>
