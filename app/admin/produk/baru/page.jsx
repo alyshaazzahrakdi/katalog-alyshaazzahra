@@ -6,7 +6,7 @@ export default async function HalamanTambahProduk({ searchParams }) {
   const params = await searchParams;
   const pesanError = typeof params?.error === "string" ? params.error : "";
   const pesanSukses = typeof params?.success === "string" ? params.success : "";
-  const fieldNames = ["nama", "harga", "kategori", "foto_url", "foto_urls", "varian", "status", "harga_diskon", "badge", "deskripsi"];
+  const fieldNames = ["nama", "harga", "kategori", "foto_url", "foto_urls", "varian", "status", "stok", "harga_diskon", "badge", "deskripsi"];
   const nilaiForm = Object.fromEntries(fieldNames.filter((field) => typeof params?.[field] === "string").map((field) => [field, params[field]]));
   const errors = Object.fromEntries(fieldNames.filter((field) => typeof params?.[`error_${field}`] === "string").map((field) => [field, params[`error_${field}`]]));
 

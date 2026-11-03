@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 const batasPertanyaan = new Map();
 const JENDELA_RATE_LIMIT = 15 * 60 * 1000;
 const MAKSIMAL_PERTANYAAN = 5;
+const MODEL_GEMINI = "gemini-3.5-flash-lite";
 
 function ambilAlamat(request) {
   return request.headers.get("x-forwarded-for")?.split(",")[0].trim()
@@ -45,7 +46,7 @@ export async function POST(request) {
 
   const { data: produk, error } = await createServerSupabaseClient()
     .from("produk")
-    .select("nama,harga,harga_diskon,kategori,status,deskripsi")
+    .select("nama,harga,harga_diskon,kategori,status,stok,deskripsi")
     .eq("id", produkId)
     .eq("aktif", true)
     .maybeSingle();
@@ -60,13 +61,14 @@ export async function POST(request) {
     `Kategori: ${produk.kategori || "Tidak ada"}`,
     `Harga: ${produk.harga_diskon || produk.harga}`,
     `Status stok: ${produk.status}`,
+    `Jumlah stok: ${produk.stok ?? "Tidak tersedia"}`,
     `Deskripsi: ${produk.deskripsi || "Tidak ada deskripsi"}`,
     `Pertanyaan pembeli: ${pertanyaan}`,
   ].join("\n");
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_GEMINI}:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -75,12 +77,16 @@ export async function POST(request) {
         cache: "no-store",
       },
     );
-    if (!response.ok) return NextResponse.json({ error: "Asisten AI sedang tidak dapat menjawab." }, { status: 502 });
+    if (!response.ok) {
+      console.error("Permintaan Gemini gagal:", response.status, await response.text());
+      return NextResponse.json({ error: "Asisten AI sedang tidak dapat menjawab. Periksa GEMINI_API_KEY, model, atau kuota Gemini." }, { status: 502 });
+    }
     const data = await response.json();
     const jawaban = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     if (!jawaban) return NextResponse.json({ error: "Asisten AI tidak memberikan jawaban." }, { status: 502 });
     return NextResponse.json({ jawaban });
   } catch (error) {
+    console.error("Asisten produk gagal:", error);
     const pesan = error?.name === "TimeoutError" || error?.name === "AbortError"
       ? "Asisten AI terlalu lama merespons. Coba lagi."
       : "Asisten AI sedang tidak dapat menjawab.";

@@ -52,9 +52,9 @@ export function KeranjangProvider({ children, toko }) {
   return (
     <KeranjangContext.Provider value={{ tambah }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-40">
+      <div className="fixed inset-x-3 bottom-3 z-40 sm:inset-x-auto sm:bottom-4 sm:right-4">
         {buka ? (
-          <div className="mb-3 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-garis bg-latar p-4 shadow-2xl">
+          <div className="mb-3 w-full rounded-2xl border border-garis bg-latar p-4 shadow-2xl sm:w-[min(22rem,calc(100vw-2rem))]">
             <div className="flex items-center justify-between">
               <h2 className="font-extrabold">Keranjang</h2>
               <button onClick={() => setBuka(false)} className="text-teks-lembut">Tutup</button>
@@ -95,5 +95,5 @@ export function KeranjangProvider({ children, toko }) {
 
 export function TombolTambahKeranjang({ produk }) {
   const { tambah } = useContext(KeranjangContext);
-  return <button type="button" onClick={() => tambah(produk)} className="rounded-lg border border-utama px-3 py-2 text-sm font-bold text-utama hover:bg-permukaan">+ Keranjang</button>;
+  return <button type="button" onClick={() => tambah(produk)} className="w-full rounded-lg border border-utama px-3 py-2 text-sm font-bold text-utama hover:bg-permukaan">+ Keranjang</button>;
 }

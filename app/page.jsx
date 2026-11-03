@@ -72,28 +72,28 @@ export default async function HalamanKatalog({ searchParams }) {
       </section>
 
       <section aria-labelledby="judul-produk" className="flex flex-col gap-6 pb-12 sm:pb-16">
-        <div className="flex items-end justify-between gap-4">
-          <div>
+        <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="min-w-0">
             <p className="text-sm font-bold uppercase tracking-[0.16em] text-utama">Koleksi kami</p>
             <h2 id="judul-produk" className="mt-2 text-2xl font-extrabold tracking-tight sm:text-3xl">
               Temukan favoritmu
             </h2>
           </div>
-          <form method="get" className="grid gap-3 rounded-2xl border border-garis bg-permukaan p-4 sm:grid-cols-[1fr_auto_auto_auto]">
-            <input name="cari" defaultValue={cari} placeholder="Cari nama produk..." className="rounded-lg border border-garis bg-latar px-3 py-2.5" />
-            <select name="kategori" defaultValue={kategori} className="rounded-lg border border-garis bg-latar px-3 py-2.5">
+          <form method="get" className="grid min-w-0 gap-3 rounded-2xl border border-garis bg-permukaan p-3 sm:grid-cols-2 sm:p-4 lg:flex-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:max-w-3xl">
+            <input name="cari" defaultValue={cari} placeholder="Cari nama produk..." className="min-w-0 w-full rounded-lg border border-garis bg-latar px-3 py-2.5 sm:col-span-2 lg:col-span-1" />
+            <select name="kategori" defaultValue={kategori} className="min-w-0 w-full rounded-lg border border-garis bg-latar px-3 py-2.5">
               <option value="">Semua kategori</option>
               {daftarKategori.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
-            <select name="urutkan" defaultValue={urutkan} className="rounded-lg border border-garis bg-latar px-3 py-2.5">
+            <select name="urutkan" defaultValue={urutkan} className="min-w-0 w-full rounded-lg border border-garis bg-latar px-3 py-2.5">
               <option value="terbaru">Terbaru</option>
               <option value="termurah">Termurah</option>
               <option value="termahal">Termahal</option>
             </select>
-            <button type="submit" className="rounded-lg bg-utama px-4 py-2.5 font-semibold text-white">Terapkan</button>
+            <button type="submit" className="w-full rounded-lg bg-utama px-4 py-2.5 font-semibold text-white sm:col-span-2 lg:col-span-1">Terapkan</button>
           </form>
           {daftarProduk.length > 0 ? (
-            <span className="hidden text-sm text-teks-lembut sm:block">{totalProduk} produk tersedia</span>
+            <span className="text-sm text-teks-lembut lg:whitespace-nowrap">{totalProduk} produk tersedia</span>
           ) : null}
         </div>
         {pesanError ? (
@@ -105,7 +105,7 @@ export default async function HalamanKatalog({ searchParams }) {
             Belum ada produk
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3">
+          <div className="grid min-w-0 grid-cols-1 gap-4 min-[400px]:grid-cols-2 sm:gap-6 md:grid-cols-3">
             {daftarProduk.map((produk) => (
               <KartuProduk key={produk.id} produk={produk} />
             ))}

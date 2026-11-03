@@ -12,7 +12,7 @@ export default function TombolBandingkan({ produk }) {
       type="button"
       onClick={() => konteks?.toggle(produk)}
       title={penuh ? "Produk pertama akan diganti" : undefined}
-      className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${dipilih ? "border-utama bg-utama text-white" : "border-garis bg-latar text-teks-lembut hover:border-utama hover:text-utama"}`}
+      className={`w-full rounded-lg border px-3 py-2 text-xs font-semibold transition min-[400px]:w-auto ${dipilih ? "border-utama bg-utama text-white" : "border-garis bg-latar text-teks-lembut hover:border-utama hover:text-utama"}`}
     >
       {dipilih ? "✓ Dibandingkan" : "Bandingkan"}
     </button>

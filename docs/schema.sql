@@ -12,6 +12,7 @@ create table if not exists public.produk (
   foto_urls jsonb not null default '[]'::jsonb,
   kategori text,
   status text not null default 'tersedia' check (status in ('tersedia', 'habis')),
+  stok integer not null default 1 check (stok >= 0),
   harga_diskon integer check (harga_diskon is null or harga_diskon >= 0),
   badge text,
   aktif boolean not null default true,
@@ -40,7 +41,33 @@ create policy "admin_ubah_produk" on public.produk
 create policy "admin_hapus_produk" on public.produk
   for delete to authenticated using (true);
 
--- 3. Data produk awal (hanya diisi jika tabel masih kosong)
+-- 3. Pengaturan toko
+create table if not exists public.pengaturan_toko (
+  id integer primary key check (id = 1),
+  nama text not null check (char_length(nama) between 2 and 120),
+  tagline text not null check (char_length(tagline) between 2 and 240),
+  nomor_whatsapp text not null check (nomor_whatsapp ~ '^[1-9][0-9]{7,14}$'),
+  alamat text not null check (char_length(alamat) between 2 and 240),
+  jam_buka text not null check (char_length(jam_buka) between 2 and 120),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.pengaturan_toko enable row level security;
+
+drop policy if exists "admin_baca_pengaturan_toko" on public.pengaturan_toko;
+drop policy if exists "admin_ubah_pengaturan_toko" on public.pengaturan_toko;
+
+create policy "admin_baca_pengaturan_toko" on public.pengaturan_toko
+  for select to authenticated using (true);
+
+create policy "admin_ubah_pengaturan_toko" on public.pengaturan_toko
+  for all to authenticated using (true) with check (true);
+
+insert into public.pengaturan_toko (id, nama, tagline, nomor_whatsapp, alamat, jam_buka)
+values (1, 'Toko Beans Coffe', 'Beans Terbaik untuk temani harimu, siap dipesan lewat WhatsApp.', '6282119369226', 'Jl. merdeka', 'Setiap hari, 08.00–20.00')
+on conflict (id) do nothing;
+
+-- 4. Data produk awal (hanya diisi jika tabel masih kosong)
 insert into public.produk (nama, harga, deskripsi, foto_url, kategori)
 select * from (values
   ('Kopi Bubuk Robusta 250 g', 45000, 'Biji robusta disangrai sedang lalu digiling halus. Cocok untuk kopi tubruk dan kopi susu.', '/produk/kopi.svg', 'Minuman'),
@@ -52,7 +79,7 @@ select * from (values
 ) as data_awal (nama, harga, deskripsi, foto_url, kategori)
 where not exists (select 1 from public.produk);
 
--- 4. Data tambahan untuk menguji paginasi, urutan, filter, dan pencarian (54 produk).
+-- 5. Data tambahan untuk menguji paginasi, urutan, filter, dan pencarian (54 produk).
 --    Bersama data awal jadi 60 produk, 10 per kategori, dengan harga dan waktu dibuat berbeda.
 --    Hanya diisi sekali; kalau tidak dibutuhkan, hapus dengan:
 --    delete from public.produk where deskripsi like 'Contoh untuk uji paginasi%';

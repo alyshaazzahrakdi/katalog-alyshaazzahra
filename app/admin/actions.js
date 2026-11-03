@@ -12,7 +12,7 @@ const TIPE_FOTO_DIIJINKAN = ["image/jpeg", "image/png", "image/gif", "image/webp
 const percobaanLogin = new Map();
 const BATAS_LOGIN = 5;
 const JENDELA_LOGIN_MS = 15 * 60 * 1000;
-const FIELD_PRODUK = ["nama", "harga", "kategori", "foto_url", "foto_urls", "varian", "status", "harga_diskon", "badge", "deskripsi"];
+const FIELD_PRODUK = ["nama", "harga", "kategori", "foto_url", "foto_urls", "varian", "status", "stok", "harga_diskon", "badge", "deskripsi"];
 
 async function catatAktivitasAdmin(user, aksi, target = null, detail = null) {
   const admin = createSupabaseAdminClient();
@@ -225,6 +225,7 @@ async function hapusFotoProduk(url) {
 }
 
 export async function buatDeskripsiAI(previousState, formData) {
+    const modelGemini = "gemini-3.5-flash-lite";
     const nama = String(formData.get("nama") ?? "").trim();
     const kategori = String(formData.get("kategori") ?? "").trim();
     if (!nama) return { error: "Isi nama produk terlebih dahulu." };
@@ -232,7 +233,7 @@ export async function buatDeskripsiAI(previousState, formData) {
 
     const prompt = `Tulis deskripsi produk dalam bahasa Indonesia untuk katalog UMKM. Nama: ${nama}. Kategori: ${kategori || "umum"}. Buat 2-3 kalimat, jelas, menarik, tanpa klaim kesehatan dan tanpa markdown.`;
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelGemini}:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -285,10 +286,9 @@ export async function kirimLinkResetPassword(formData) {
   if (!origin) {
     redirect(`/admin/login/lupa-password?error=${encodeURIComponent("Alamat aplikasi tidak dapat ditentukan.")}`);
   }
-
   const supabase = await createServerAuthClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/callback?next=/admin/password/reset`,
+    redirectTo: `${origin}/admin/password/reset`,
   });
 
   if (error) {
@@ -392,10 +392,12 @@ export async function tambahProdukAdmin(formData) {
   const nama = String(formData.get("nama") ?? "").trim();
   const hargaInput = String(formData.get("harga") ?? "").trim();
   const harga = Number(hargaInput);
+  const stok = Number(String(formData.get("stok") ?? "").trim());
   const errors = {};
 
   if (!nama) errors.nama = "Nama produk wajib diisi.";
   if (!hargaInput || !Number.isFinite(harga) || harga < 0) errors.harga = "Harga wajib diisi dengan angka 0 atau lebih.";
+  if (!Number.isInteger(stok) || stok < 0) errors.stok = "Jumlah stok wajib berupa angka bulat 0 atau lebih.";
   if (Object.keys(errors).length) redirectValidasiProduk("/admin/produk/baru", formData, errors);
   const hasilVarian = ambilVarian(formData);
   if (hasilVarian.error) redirect(`/admin/produk/baru?error=${encodeURIComponent(hasilVarian.error)}`);
@@ -420,7 +422,8 @@ export async function tambahProdukAdmin(formData) {
     kategori: String(formData.get("kategori") ?? "").trim() || null,
     foto_url: foto?.url || normalisasiUrlFoto(formData.get("foto_url")) || daftarFoto[0] || null,
     foto_urls: daftarFoto,
-    status: ["tersedia", "habis"].includes(formData.get("status")) ? formData.get("status") : "tersedia",
+    status: stok === 0 ? "habis" : "tersedia",
+    stok,
     harga_diskon: Number(formData.get("harga_diskon")) > 0 ? Number(formData.get("harga_diskon")) : null,
     badge: String(formData.get("badge") ?? "").trim() || null,
     deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,
@@ -441,10 +444,12 @@ export async function ubahProdukAdmin(id, formData) {
   const nama = String(formData.get("nama") ?? "").trim();
   const hargaInput = String(formData.get("harga") ?? "").trim();
   const harga = Number(hargaInput);
+  const stok = Number(String(formData.get("stok") ?? "").trim());
   const errors = {};
 
   if (!nama) errors.nama = "Nama produk wajib diisi.";
   if (!hargaInput || !Number.isFinite(harga) || harga < 0) errors.harga = "Harga wajib diisi dengan angka 0 atau lebih.";
+  if (!Number.isInteger(stok) || stok < 0) errors.stok = "Jumlah stok wajib berupa angka bulat 0 atau lebih.";
   if (Object.keys(errors).length) redirectValidasiProduk(`/admin/produk/${id}/ubah`, formData, errors);
   const hasilVarian = ambilVarian(formData);
   if (hasilVarian.error) redirect(`/admin/produk/${id}/ubah?error=${encodeURIComponent(hasilVarian.error)}`);
@@ -456,17 +461,39 @@ export async function ubahProdukAdmin(id, formData) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
 
+  const { data: produkLama, error: produkLamaError } = await supabase
+    .from("produk")
+    .select("foto_url,foto_urls")
+    .eq("id", id)
+    .maybeSingle();
+  if (produkLamaError || !produkLama) {
+    redirect(`/admin/produk/${id}/ubah?error=${encodeURIComponent("Produk tidak ditemukan.")}`);
+  }
+
   const fileFoto = await ambilFileFoto(formData, `/admin/produk/${id}/ubah`);
   const fotoBaru = await unggahFotoProduk(fileFoto, `/admin/produk/${id}/ubah`);
+  const fotoLama = normalisasiUrlFoto(formData.get("foto_url")) || produkLama.foto_url;
+  const fotoTambahan = ambilLinkFoto(formData);
+  const daftarFotoLama = Array.isArray(produkLama.foto_urls) ? produkLama.foto_urls.filter(Boolean) : [];
+  const daftarFoto = fotoBaru
+    ? [fotoBaru.url, ...fotoTambahan]
+    : fotoTambahan.length
+      ? fotoTambahan
+      : daftarFotoLama.length
+        ? daftarFotoLama
+        : fotoLama
+          ? [fotoLama]
+          : [];
   const { error } = await supabase
     .from("produk")
     .update({
       nama,
       harga,
       kategori: String(formData.get("kategori") ?? "").trim() || null,
-      foto_url: fotoBaru?.url || normalisasiUrlFoto(formData.get("foto_url")),
-      foto_urls: [...(fotoBaru ? [fotoBaru.url] : []), ...ambilLinkFoto(formData)],
-      status: ["tersedia", "habis"].includes(formData.get("status")) ? formData.get("status") : "tersedia",
+      foto_url: fotoBaru?.url || fotoLama || daftarFoto[0] || null,
+      foto_urls: daftarFoto,
+      status: stok === 0 ? "habis" : "tersedia",
+      stok,
       harga_diskon: Number(formData.get("harga_diskon")) > 0 ? Number(formData.get("harga_diskon")) : null,
       badge: String(formData.get("badge") ?? "").trim() || null,
       deskripsi: String(formData.get("deskripsi") ?? "").trim() || null,

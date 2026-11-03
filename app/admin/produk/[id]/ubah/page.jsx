@@ -9,7 +9,7 @@ export default async function HalamanUbahProduk({ params, searchParams }) {
   const query = await searchParams;
   const pesanError = typeof query?.error === "string" ? query.error : "";
   const pesanSukses = typeof query?.success === "string" ? query.success : "";
-  const fieldNames = ["nama", "harga", "kategori", "foto_url", "foto_urls", "varian", "status", "harga_diskon", "badge", "deskripsi"];
+  const fieldNames = ["nama", "harga", "kategori", "foto_url", "foto_urls", "varian", "status", "stok", "harga_diskon", "badge", "deskripsi"];
   const nilaiForm = Object.fromEntries(fieldNames.filter((field) => typeof query?.[field] === "string").map((field) => [field, query[field]]));
   const errors = Object.fromEntries(fieldNames.filter((field) => typeof query?.[`error_${field}`] === "string").map((field) => [field, query[`error_${field}`]]));
   const supabase = await createServerAuthClient();

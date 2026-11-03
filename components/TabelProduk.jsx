@@ -26,6 +26,10 @@ export default function TabelProduk({ daftarProduk }) {
     }
   }
 
+  function fotoProduk(produk) {
+    return produk?.foto_url || (Array.isArray(produk?.foto_urls) ? produk.foto_urls.find(Boolean) : "");
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <form action={hapusProdukTerpilihAdmin} onSubmit={(event) => konfirmasiHapus(event, terpilih.length)} className="flex justify-end px-5 pt-4">
@@ -49,6 +53,7 @@ export default function TabelProduk({ daftarProduk }) {
             <th className="px-4 py-3 font-semibold">Produk</th>
             <th className="px-4 py-3 font-semibold">Kategori</th>
             <th className="px-4 py-3 font-semibold">Harga</th>
+            <th className="px-4 py-3 font-semibold">Stok</th>
             <th className="px-4 py-3 font-semibold">
               <span className="sr-only">Aksi</span>
             </th>
@@ -68,13 +73,16 @@ export default function TabelProduk({ daftarProduk }) {
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-garis bg-permukaan">
-                    <img src={urlFotoTampil(produk.foto_url)} alt="" className="h-full w-full object-contain" />
+                    <img src={urlFotoTampil(fotoProduk(produk))} alt="" className="h-full w-full object-contain" />
                   </div>
                   <span className="font-bold">{produk.nama}</span>
                 </div>
               </td>
               <td className="px-4 py-3 text-teks-lembut">{produk.kategori}</td>
               <td className="px-4 py-3">{formatRupiah(produk.harga)}</td>
+              <td className={`px-4 py-3 font-semibold ${produk.stok > 0 ? "text-utama" : "text-bahaya"}`}>
+                {produk.stok > 0 ? `${produk.stok} siap` : "Habis"}
+              </td>
               <td className="px-4 py-3">
                 <div className="flex justify-end gap-2">
                   {/* US-09 dan US-10 (bonus): ubah dan hapus produk */}
