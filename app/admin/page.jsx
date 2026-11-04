@@ -74,7 +74,7 @@ export default async function HalamanAdmin({ searchParams }) {
               Atur produk, foto, harga, dan informasi katalog dari satu tempat.
             </p>
           </div>
-          <Tombol href="/admin/produk/baru" className="border border-white/20 bg-white text-utama hover:bg-white/90">
+          <Tombol href="/admin/produk/baru"           className="border border-white/20 bg-utama-gelap text-white hover:bg-utama">
             + Tambah produk
           </Tombol>
           <Tombol href="/admin/export" varian="garis">Ekspor CSV</Tombol>

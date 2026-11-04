@@ -2,6 +2,7 @@ import KartuProduk from "@/components/KartuProduk";
 import { ambilPengaturanToko } from "@/lib/toko-server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import TerakhirDilihat from "@/components/TerakhirDilihat";
+import { urlFotoTampil } from "@/lib/foto";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,22 @@ export default async function HalamanKatalog({ searchParams }) {
 
   return (
     <>
-      {banner ? <section className="my-6 rounded-2xl bg-harga-latar p-5"><h2 className="text-2xl font-extrabold text-harga">{banner.judul}</h2><p className="mt-1">{banner.teks}</p>{banner.tautan ? <a className="mt-3 inline-block font-bold text-utama" href={banner.tautan}>Lihat promo →</a> : null}</section> : null}
+      {banner ? (
+        <section className="my-6 overflow-hidden rounded-2xl bg-harga-latar">
+          {banner.gambar_url ? (
+            <img
+              src={urlFotoTampil(banner.gambar_url)}
+              alt=""
+              className="max-h-72 w-full object-cover"
+            />
+          ) : null}
+          <div className="p-5">
+            <h2 className="text-2xl font-extrabold text-harga">{banner.judul}</h2>
+            {banner.teks ? <p className="mt-1">{banner.teks}</p> : null}
+            {banner.tautan ? <a className="mt-3 inline-block font-bold text-utama" href={banner.tautan}>Lihat promo →</a> : null}
+          </div>
+        </section>
+      ) : null}
       <section className="relative my-6 overflow-hidden rounded-[2rem] bg-utama px-6 py-10 text-white sm:my-10 sm:px-10 sm:py-14">
         <div className="absolute -right-20 -top-28 h-72 w-72 rounded-full border-[34px] border-white/10" />
         <div className="absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-utama-gelap/50" />
