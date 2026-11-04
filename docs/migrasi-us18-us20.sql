@@ -16,3 +16,9 @@ create table if not exists public.kategori (
 alter table public.kategori enable row level security;
 drop policy if exists "admin_kelola_kategori" on public.kategori;
 create policy "admin_kelola_kategori" on public.kategori for all to authenticated using (true) with check (true);
+
+insert into public.kategori (nama)
+select distinct trim(kategori)
+from public.produk
+where kategori is not null and trim(kategori) <> ''
+on conflict (nama) do nothing;

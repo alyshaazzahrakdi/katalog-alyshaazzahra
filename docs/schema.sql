@@ -24,6 +24,18 @@ create table if not exists public.produk (
 -- Hanya admin yang sudah login yang boleh membaca dan mengubah data.
 alter table public.produk enable row level security;
 
+-- Master kategori untuk pilihan kategori pada form produk.
+create table if not exists public.kategori (
+  id bigint generated always as identity primary key,
+  nama text not null unique,
+  created_at timestamptz not null default now()
+);
+
+alter table public.kategori enable row level security;
+drop policy if exists "admin_kelola_kategori" on public.kategori;
+create policy "admin_kelola_kategori" on public.kategori
+  for all to authenticated using (true) with check (true);
+
 drop policy if exists "admin_baca_produk" on public.produk;
 drop policy if exists "admin_tambah_produk" on public.produk;
 drop policy if exists "admin_ubah_produk" on public.produk;
@@ -94,6 +106,12 @@ select * from (values
   ('Kain Batik Cap 2 m', 175000, 'Batik cap motif parang di atas kain katun primisima, panjang 2 meter.', '/produk/batik.svg', 'Kain')
 ) as data_awal (nama, harga, deskripsi, foto_url, kategori)
 where not exists (select 1 from public.produk);
+
+insert into public.kategori (nama)
+select distinct trim(kategori)
+from public.produk
+where kategori is not null and trim(kategori) <> ''
+on conflict (nama) do nothing;
 
 -- 6. Data tambahan untuk menguji paginasi, urutan, filter, dan pencarian (54 produk).
 --    Bersama data awal jadi 60 produk, 10 per kategori, dengan harga dan waktu dibuat berbeda.

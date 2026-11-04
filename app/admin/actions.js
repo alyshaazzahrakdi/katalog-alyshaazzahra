@@ -86,6 +86,15 @@ async function simpanVarian(supabase, produkId, varian) {
   return error;
 }
 
+async function validasiKategoriProduk(supabase, formData, path) {
+  const namaKategori = String(formData.get("kategori") ?? "").trim();
+  if (!namaKategori) return;
+  const { data, error } = await supabase.from("kategori").select("id").eq("nama", namaKategori).maybeSingle();
+  if (error || !data) {
+    redirectValidasiProduk(path, formData, { kategori: "Pilih kategori yang tersedia." });
+  }
+}
+
 function redirectValidasiProduk(path, formData, errors) {
   const query = new URLSearchParams({ error: "Periksa isian yang ditandai." });
   Object.entries(errors).forEach(([field, message]) => query.set(`error_${field}`, message));
@@ -426,6 +435,7 @@ export async function tambahProdukAdmin(formData) {
   if (userError || !userData.user) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
+  await validasiKategoriProduk(supabase, formData, "/admin/produk/baru");
 
   const fileFoto = formData.getAll("foto").filter((file) => file && typeof file !== "string" && file.size > 0);
   const fotoUpload = [];
@@ -478,6 +488,7 @@ export async function ubahProdukAdmin(id, formData) {
   if (userError || !userData.user) {
     redirect(`/admin/login?error=${encodeURIComponent("Sesi admin sudah berakhir. Silakan masuk kembali.")}`);
   }
+  await validasiKategoriProduk(supabase, formData, `/admin/produk/${id}/ubah`);
 
   const { data: produkLama, error: produkLamaError } = await supabase
     .from("produk")
@@ -666,6 +677,84 @@ export async function simpanPengaturanToko(formData) {
   });
   if (error) redirect(`/admin?error=${encodeURIComponent("Pengaturan toko gagal disimpan.")}`);
   redirect(`/admin?success=${encodeURIComponent("Pengaturan toko berhasil disimpan.")}`);
+}
+
+export async function tambahKategori(formData) {
+  const supabase = await pastikanAdmin();
+  const nama = String(formData.get("nama") ?? "").trim();
+  if (nama.length < 2 || nama.length > 80) {
+    redirect(`/admin/kategori?error=${encodeURIComponent("Nama kategori harus 2–80 karakter.")}`);
+  }
+
+  const { error } = await supabase.from("kategori").insert({ nama });
+  if (error) {
+    const pesan = error.code === "23505"
+      ? "Kategori dengan nama tersebut sudah ada."
+      : "Kategori gagal ditambahkan.";
+    redirect(`/admin/kategori?error=${encodeURIComponent(pesan)}`);
+  }
+  redirect(`/admin/kategori?success=${encodeURIComponent("Kategori berhasil ditambahkan.")}`);
+}
+
+export async function ubahKategori(id, formData) {
+  const supabase = await pastikanAdmin();
+  const nama = String(formData.get("nama") ?? "").trim();
+  if (!id || nama.length < 2 || nama.length > 80) {
+    redirect(`/admin/kategori?error=${encodeURIComponent("Nama kategori harus 2–80 karakter.")}`);
+  }
+
+  const { data: kategoriLama, error: ambilError } = await supabase
+    .from("kategori")
+    .select("nama")
+    .eq("id", id)
+    .maybeSingle();
+  if (ambilError || !kategoriLama) {
+    redirect(`/admin/kategori?error=${encodeURIComponent("Kategori tidak ditemukan.")}`);
+  }
+
+  const { error: ubahError } = await supabase.from("kategori").update({ nama }).eq("id", id);
+  if (ubahError) {
+    const pesan = ubahError.code === "23505"
+      ? "Kategori dengan nama tersebut sudah ada."
+      : "Kategori gagal diubah.";
+    redirect(`/admin/kategori?error=${encodeURIComponent(pesan)}`);
+  }
+
+  const { error: produkError } = await supabase
+    .from("produk")
+    .update({ kategori: nama })
+    .eq("kategori", kategoriLama.nama);
+  if (produkError) {
+    redirect(`/admin/kategori?error=${encodeURIComponent("Nama kategori berubah, tetapi produk terkait gagal diperbarui.")}`);
+  }
+  redirect(`/admin/kategori?success=${encodeURIComponent("Kategori berhasil diubah.")}`);
+}
+
+export async function hapusKategori(id) {
+  const supabase = await pastikanAdmin();
+  if (!id) redirect(`/admin/kategori?error=${encodeURIComponent("Kategori tidak valid.")}`);
+
+  const { data: kategori, error: ambilError } = await supabase
+    .from("kategori")
+    .select("nama")
+    .eq("id", id)
+    .maybeSingle();
+  if (ambilError || !kategori) {
+    redirect(`/admin/kategori?error=${encodeURIComponent("Kategori tidak ditemukan.")}`);
+  }
+
+  const { count, error: hitungError } = await supabase
+    .from("produk")
+    .select("id", { count: "exact", head: true })
+    .eq("kategori", kategori.nama);
+  if (hitungError) redirect(`/admin/kategori?error=${encodeURIComponent("Penggunaan kategori gagal diperiksa.")}`);
+  if ((count ?? 0) > 0) {
+    redirect(`/admin/kategori?error=${encodeURIComponent(`Kategori masih dipakai oleh ${count} produk dan tidak dapat dihapus.`)}`);
+  }
+
+  const { error } = await supabase.from("kategori").delete().eq("id", id);
+  if (error) redirect(`/admin/kategori?error=${encodeURIComponent("Kategori gagal dihapus.")}`);
+  redirect(`/admin/kategori?success=${encodeURIComponent("Kategori berhasil dihapus.")}`);
 }
 
 export async function tambahAdmin(formData) {

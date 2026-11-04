@@ -7,7 +7,7 @@ import { useActionState, useEffect } from "react";
 
 // Dipakai untuk tambah produk (US-08) dan ubah produk (US-09). Keduanya bonus di jalur offline.
 // Nama field sama dengan kolom tabel "produk".
-export default function FormProduk({ produk = {}, nilaiForm = {}, errors = {}, labelTombol, action }) {
+export default function FormProduk({ produk = {}, kategori = [], nilaiForm = {}, errors = {}, labelTombol, action }) {
   const [state, generateDescription, pending] = useActionState(buatDeskripsiAI, {});
   const nilai = (nama) => Object.prototype.hasOwnProperty.call(nilaiForm, nama) ? nilaiForm[nama] : produk[nama];
   useEffect(() => {
@@ -26,7 +26,14 @@ export default function FormProduk({ produk = {}, nilaiForm = {}, errors = {}, l
         error={errors.harga}
         required
       />
-      <Input label="Kategori" name="kategori" defaultValue={nilai("kategori")} error={errors.kategori} />
+      <label className="flex flex-col gap-1.5 text-sm font-semibold">
+        Kategori
+        <select name="kategori" defaultValue={nilai("kategori") || ""} className="rounded-lg border border-garis bg-latar px-3 py-2.5">
+          <option value="">Tanpa kategori</option>
+          {kategori.map((item) => <option key={item.id} value={item.nama}>{item.nama}</option>)}
+        </select>
+        {errors.kategori ? <span className="font-normal text-bahaya">{errors.kategori}</span> : null}
+      </label>
       <Input
         label="Link foto (opsional)"
         name="foto_url"

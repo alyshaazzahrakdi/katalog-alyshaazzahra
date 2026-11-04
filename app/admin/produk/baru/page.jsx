@@ -1,6 +1,7 @@
 import NavAdmin from "@/components/NavAdmin";
 import FormProduk from "@/components/FormProduk";
 import { tambahProdukAdmin } from "@/app/admin/actions";
+import { createServerAuthClient } from "@/lib/supabase/auth";
 
 export default async function HalamanTambahProduk({ searchParams }) {
   const params = await searchParams;
@@ -9,12 +10,15 @@ export default async function HalamanTambahProduk({ searchParams }) {
   const fieldNames = ["nama", "harga", "kategori", "foto_url", "foto_urls", "varian", "status", "stok", "harga_diskon", "badge", "deskripsi"];
   const nilaiForm = Object.fromEntries(fieldNames.filter((field) => typeof params?.[field] === "string").map((field) => [field, params[field]]));
   const errors = Object.fromEntries(fieldNames.filter((field) => typeof params?.[`error_${field}`] === "string").map((field) => [field, params[`error_${field}`]]));
+  const supabase = await createServerAuthClient();
+  const { data: kategori, error: kategoriError } = await supabase.from("kategori").select("id,nama").order("nama");
+  if (kategoriError) throw kategoriError;
 
   return (
     <div className="flex flex-col gap-6 py-8">
       <NavAdmin />
       <h1 className="text-2xl font-extrabold">Tambah produk</h1>
-      <FormProduk labelTombol="Simpan produk" action={tambahProdukAdmin} nilaiForm={nilaiForm} errors={errors} />
+      <FormProduk labelTombol="Simpan produk" action={tambahProdukAdmin} nilaiForm={nilaiForm} errors={errors} kategori={kategori ?? []} />
       {pesanError ? (
         <p role="alert" className="text-bahaya">
           {pesanError}

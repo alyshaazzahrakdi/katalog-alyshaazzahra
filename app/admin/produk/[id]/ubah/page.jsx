@@ -28,6 +28,8 @@ export default async function HalamanUbahProduk({ params, searchParams }) {
   }
   const { data: varianProduk, error: varianError } = await supabase.from("varian_produk").select("nama,harga").eq("produk_id", id).order("id");
   if (varianError) throw varianError;
+  const { data: kategori, error: kategoriError } = await supabase.from("kategori").select("id,nama").order("nama");
+  if (kategoriError) throw kategoriError;
   produk.varian_produk = varianProduk ?? [];
 
   return (
@@ -40,6 +42,7 @@ export default async function HalamanUbahProduk({ params, searchParams }) {
         errors={errors}
         labelTombol="Simpan perubahan"
         action={ubahProdukAdmin.bind(null, id)}
+        kategori={kategori ?? []}
       />
       {pesanError ? (
         <p role="alert" className="text-bahaya">
