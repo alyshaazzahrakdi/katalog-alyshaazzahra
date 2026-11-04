@@ -13,7 +13,13 @@ export default async function HalamanKategori({ params }) {
   if (kategoriError) throw kategoriError;
   const kategori = kategoriDariSlug(slug, [...new Set((kategoriRows || []).map((item) => item.kategori).filter(Boolean))]);
   if (!kategori) notFound();
-  const { data: produk, error } = await supabase.from("produk").select("*").eq("aktif", true).eq("kategori", kategori).order("urutan", { ascending: true }).order("created_at", { ascending: false });
+  const { data: produk, error } = await supabase
+    .from("produk")
+    .select("id,nama,harga,harga_diskon,kategori,foto_url,foto_urls,badge,status,stok,urutan,created_at")
+    .eq("aktif", true)
+    .eq("kategori", kategori)
+    .order("urutan", { ascending: true })
+    .order("created_at", { ascending: false });
   if (error) throw error;
   return <section className="py-8 sm:py-12">
     <Link href="/" className="text-sm font-semibold text-teks-lembut hover:text-utama">← Kembali ke katalog</Link>

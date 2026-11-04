@@ -24,15 +24,24 @@ export default async function HalamanKatalog({ searchParams }) {
 
   try {
     const supabase = createServerSupabaseClient();
-    const { data: bannerAktif } = await supabase.from("banner_promo").select("*").eq("aktif", true).order("updated_at", { ascending: false }).limit(1).maybeSingle();
-    banner = bannerAktif;
-    const query = supabase.from("produk").select("*").eq("aktif", true);
+    const bannerQuery = supabase
+      .from("banner_promo")
+      .select("judul,teks,gambar_url,tautan")
+      .eq("aktif", true)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const query = supabase
+      .from("produk")
+      .select("id,nama,harga,harga_diskon,kategori,foto_url,foto_urls,badge,status,stok,urutan,created_at")
+      .eq("aktif", true);
     if (cari) query.ilike("nama", `%${cari}%`);
     if (kategori) query.eq("kategori", kategori);
     const countQuery = supabase.from("produk").select("id", { count: "exact", head: true }).eq("aktif", true);
     if (cari) countQuery.ilike("nama", `%${cari}%`);
     if (kategori) countQuery.eq("kategori", kategori);
-    const { count, error: countError } = await countQuery;
+    const [{ data: bannerAktif }, { count, error: countError }] = await Promise.all([bannerQuery, countQuery]);
+    banner = bannerAktif;
     if (countError) throw countError;
     totalProduk = count ?? 0;
     jumlahHalaman = Math.max(1, Math.ceil(totalProduk / ukuranHalaman));

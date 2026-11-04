@@ -17,6 +17,8 @@ export default function GambarProduk({ produk, alt, className = "" }) {
       src={urlFotoTampil(sumber)}
       alt={alt}
       className={className}
+      loading="lazy"
+      decoding="async"
       onError={() => setIndeks((nilai) => (nilai + 1 < foto.length ? nilai + 1 : nilai))}
     />
   );
