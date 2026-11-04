@@ -379,23 +379,30 @@ export async function ubahStatusProdukAdmin(id, formData) {
 export async function ubahUrutanProdukAdmin(id, formData) {
   const supabase = await pastikanAdmin();
   const arah = formData.get("arah") === "naik" ? -1 : 1;
-  const { data: produk, error: produkError } = await supabase.from("produk").select("id,urutan").eq("id", id).maybeSingle();
+  const { data: produk, error: produkError } = await supabase.from("produk").select("id,urutan,created_at").eq("id", id).maybeSingle();
   if (produkError || !produk) redirect(`/admin?error=${encodeURIComponent("Produk tidak ditemukan.")}`);
   const { data: tetangga, error: tetanggaError } = await supabase
     .from("produk")
-    .select("id,urutan")
+    .select("id,urutan,created_at")
     .order("urutan", { ascending: true })
     .order("created_at", { ascending: false });
   if (tetanggaError) redirect(`/admin?error=${encodeURIComponent("Urutan produk gagal dimuat.")}`);
   const index = tetangga.findIndex((item) => item.id === produk.id);
   const tujuan = tetangga[index + arah];
   if (!tujuan) redirect("/admin");
-  const { error } = await supabase.from("produk").update({ urutan: index + arah }).eq("id", produk.id);
-  if (!error) {
-    const hasil = await supabase.from("produk").update({ urutan: index }).eq("id", tujuan.id);
-    if (hasil.error) redirect(`/admin?error=${encodeURIComponent("Urutan produk gagal disimpan.")}`);
+
+  const daftarBaru = [...tetangga];
+  daftarBaru.splice(index, 1);
+  daftarBaru.splice(index + arah, 0, produk);
+
+  for (const [posisi, item] of daftarBaru.entries()) {
+    const { error } = await supabase
+      .from("produk")
+      .update({ urutan: posisi })
+      .eq("id", item.id);
+    if (error) redirect(`/admin?error=${encodeURIComponent("Urutan produk gagal disimpan.")}`);
   }
-  if (error) redirect(`/admin?error=${encodeURIComponent("Urutan produk gagal disimpan.")}`);
+
   redirect(`/admin?success=${encodeURIComponent("Urutan produk berhasil diubah.")}`);
 }
 
