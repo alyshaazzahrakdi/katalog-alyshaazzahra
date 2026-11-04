@@ -5,6 +5,8 @@ import { headers } from "next/headers";
 import { createServerAuthClient } from "@/lib/supabase/auth";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { cookies } from "next/headers";
+import { RECOVERY_COOKIE_NAME } from "@/lib/supabase/recovery";
 
 const BUCKET_FOTO_PRODUK = "produk";
 const UKURAN_MAKSIMAL_FOTO = 5 * 1024 * 1024;
@@ -290,7 +292,7 @@ export async function kirimLinkResetPassword(formData) {
   }
   const supabase = await createServerAuthClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/admin/password/reset`,
+    redirectTo: `${origin}/admin/login`,
   });
 
   if (error) {
@@ -312,10 +314,16 @@ export async function resetPasswordAdmin(formData) {
     redirect(`/admin/password/reset?error=${encodeURIComponent("Konfirmasi password tidak sama.")}`);
   }
 
+  const cookieStore = await cookies();
+  if (cookieStore.get(RECOVERY_COOKIE_NAME)?.value !== "1") {
+    redirect(`/admin/login?error=${encodeURIComponent("Link reset tidak valid atau sudah kedaluwarsa.")}`);
+  }
+
   const supabase = await createServerAuthClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
   if (userError || !userData.user) {
+    cookieStore.delete(RECOVERY_COOKIE_NAME);
     redirect(`/admin/login?error=${encodeURIComponent("Link reset tidak valid atau sudah kedaluwarsa.")}`);
   }
 
@@ -326,6 +334,7 @@ export async function resetPasswordAdmin(formData) {
   }
 
   await supabase.auth.signOut();
+  cookieStore.delete(RECOVERY_COOKIE_NAME);
   redirect(`/admin/login?success=${encodeURIComponent("Password berhasil diubah. Silakan masuk dengan password baru.")}`);
 }
 

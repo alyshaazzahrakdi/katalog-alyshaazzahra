@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import { normalizeSupabaseUrl } from "@/lib/supabase/url";
+import { RECOVERY_COOKIE_NAME } from "@/lib/supabase/recovery";
 
 export async function proxy(request) {
   let response = NextResponse.next({ request });
@@ -28,8 +29,15 @@ export async function proxy(request) {
   const isPublicAuthPage = [
     "/admin/login",
     "/admin/login/lupa-password",
-    "/admin/password/reset",
   ].includes(request.nextUrl.pathname);
+
+  if (request.nextUrl.pathname === "/admin/password/reset"
+    && request.cookies.get(RECOVERY_COOKIE_NAME)?.value !== "1") {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/admin/login";
+    loginUrl.search = "error=Link%20reset%20tidak%20valid%20atau%20sudah%20kedaluwarsa.";
+    return NextResponse.redirect(loginUrl);
+  }
 
   if (!userData.user && !isPublicAuthPage) {
     const loginUrl = request.nextUrl.clone();

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerAuthClient } from "@/lib/supabase/auth";
+import { RECOVERY_COOKIE_NAME } from "@/lib/supabase/recovery";
 
 export async function POST(request) {
   let body;
@@ -27,5 +28,13 @@ export async function POST(request) {
     return NextResponse.json({ error: "Sesi recovery tidak valid." }, { status: 401 });
   }
 
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(RECOVERY_COOKIE_NAME, "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 10 * 60,
+  });
+  return response;
 }
