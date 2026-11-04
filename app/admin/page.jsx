@@ -74,10 +74,13 @@ export default async function HalamanAdmin({ searchParams }) {
               Atur produk, foto, harga, dan informasi katalog dari satu tempat.
             </p>
           </div>
-          <Tombol href="/admin/produk/baru"           className="border border-white/20 bg-utama-gelap text-white hover:bg-utama">
-            + Tambah produk
-          </Tombol>
-          <Tombol href="/admin/export" varian="garis">Ekspor CSV</Tombol>
+          <div className="flex flex-wrap gap-3">
+            <Tombol href="/admin/produk/baru" className="border border-white/20 bg-utama-gelap text-white hover:bg-utama">
+              + Tambah produk
+            </Tombol>
+            <Tombol href="/admin/kategori" varian="garis">Kelola kategori</Tombol>
+            <Tombol href="/admin/export" varian="garis">Ekspor CSV</Tombol>
+          </div>
         </div>
       </section>
       <div className="grid gap-3 sm:grid-cols-3">

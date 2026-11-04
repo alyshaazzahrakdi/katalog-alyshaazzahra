@@ -56,11 +56,12 @@ export default function FormProduk({ produk = {}, kategori = [], nilaiForm = {},
         Format gambar yang didukung: JPG, PNG, GIF, WEBP, BMP, TIFF, atau AVIF. Maksimal 5 MB. File Word, PHP, dan file palsu akan ditolak.
       </p>
       <Input label="Varian ukuran dan harga (satu per baris: Nama|Harga)" name="varian" textarea placeholder={"250 g|25000\n500 g|45000"} defaultValue={nilaiForm.varian ?? (Array.isArray(produk.varian_produk) ? produk.varian_produk.map((item) => `${item.nama}|${item.harga}`).join("\n") : "")} error={errors.varian} />
-      <div className="grid gap-4 sm:grid-cols-4">
+      <p className="text-sm font-bold text-utama">Stok dan promosi</p>
+      <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Status stok" name="status" defaultValue={nilai("status") || "tersedia"} />
         <Input label="Jumlah stok siap" name="stok" type="number" min="0" defaultValue={nilai("stok") ?? 0} required />
-        <Input label="Harga diskon (opsional)" name="harga_diskon" type="number" min="0" defaultValue={nilai("harga_diskon") ?? ""} />
-        <Input label="Badge (opsional)" name="badge" placeholder="Baru / Terlaris" defaultValue={nilai("badge")} />
+        <Input label="Harga coret / harga diskon (opsional)" name="harga_diskon" type="number" min="0" defaultValue={nilai("harga_diskon") ?? ""} />
+        <Input label="Badge promosi (opsional)" name="badge" placeholder="Baru / Terlaris" defaultValue={nilai("badge")} />
       </div>
       <div className="flex flex-col gap-2">
         <Input label="Deskripsi" name="deskripsi" textarea defaultValue={nilai("deskripsi")} id="deskripsi-produk" />

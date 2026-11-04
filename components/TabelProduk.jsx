@@ -75,7 +75,15 @@ export default function TabelProduk({ daftarProduk }) {
                 </div>
               </td>
               <td className="px-4 py-3 text-teks-lembut">{produk.kategori}</td>
-              <td className="px-4 py-3">{formatRupiah(produk.harga)}</td>
+              <td className="px-4 py-3">
+                {produk.harga_diskon ? (
+                  <div>
+                    <span className="font-bold text-harga">{formatRupiah(produk.harga_diskon)}</span>
+                    <del className="ml-1 text-xs text-teks-lembut">{formatRupiah(produk.harga)}</del>
+                  </div>
+                ) : formatRupiah(produk.harga)}
+                {produk.badge ? <span className="mt-1 block text-xs font-bold text-utama">{produk.badge}</span> : null}
+              </td>
               <td className={`px-4 py-3 font-semibold ${produk.stok > 0 ? "text-utama" : "text-bahaya"}`}>
                 {produk.stok > 0 ? `${produk.stok} siap` : "Habis"}
               </td>
