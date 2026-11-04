@@ -2,7 +2,6 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ambilPengaturanToko } from "@/lib/toko-server";
-import RecoveryHashHandler from "@/app/auth/RecoveryHashHandler";
 import { KeranjangProvider } from "@/components/Keranjang";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { FavoritProvider } from "@/components/FavoritProvider";
@@ -27,7 +26,7 @@ export default async function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=optional"
         />
       </head>
       <body className="flex min-h-screen flex-col font-sans antialiased">
@@ -36,7 +35,6 @@ export default async function RootLayout({ children }) {
           <TerakhirDilihatProvider>
           <BandingkanProvider>
           <KeranjangProvider toko={toko}>
-          <RecoveryHashHandler />
           <Header toko={toko} />
           <main className="mx-auto w-full max-w-5xl flex-1 px-4">{children}</main>
           <Footer toko={toko} />

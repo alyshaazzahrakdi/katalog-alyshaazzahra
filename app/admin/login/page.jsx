@@ -3,6 +3,7 @@ import Input from "@/components/Input";
 import Tombol from "@/components/Tombol";
 import { loginAdmin } from "@/app/admin/actions";
 import AuthLayout from "@/components/AuthLayout";
+import RecoveryHashHandler from "@/app/auth/RecoveryHashHandler";
 
 export default async function HalamanLogin({ searchParams }) {
   const params = await searchParams;
@@ -10,7 +11,9 @@ export default async function HalamanLogin({ searchParams }) {
   const pesanSukses = typeof params?.success === "string" ? params.success : "";
 
   return (
-    <AuthLayout
+    <>
+      <RecoveryHashHandler />
+      <AuthLayout
       eyebrow="Area pemilik toko"
       title="Selamat datang kembali."
       description="Masuk untuk mengatur produk dan memastikan katalog Anda selalu siap dilihat pelanggan."
@@ -49,6 +52,7 @@ export default async function HalamanLogin({ searchParams }) {
           {pesanSukses}
         </p>
       ) : null}
-    </AuthLayout>
+      </AuthLayout>
+    </>
   );
 }

@@ -70,7 +70,10 @@ export default async function HalamanKatalog({ searchParams }) {
             <img
               src={urlFotoTampil(banner.gambar_url)}
               alt=""
-              className="max-h-72 w-full object-cover"
+              width="1200"
+              height="400"
+              fetchPriority="high"
+              className="aspect-[3/1] max-h-72 w-full object-cover"
             />
           ) : null}
           <div className="p-5">
